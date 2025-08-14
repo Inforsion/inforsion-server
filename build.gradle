@@ -24,12 +24,37 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Spring Boot Core
+    implementation 'org.springframework.boot:spring-boot-starter-web' // REST API, MVC, 내장 Tomcat
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA, Hibernate ORM
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // Bean Validation (JSR-303)
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security (인증, 인가)
+    
+    // Database
+    implementation 'mysql:mysql-connector-java:8.0.33' // MySQL JDBC 드라이버
+    
+    // API Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0' // Swagger UI, OpenAPI 3.0
+    
+    // JWT Authentication
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3' // JWT API 인터페이스
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.3' // JWT 구현체
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3' // JWT Jackson 직렬화 지원
+    
+    // Object Mapping
+    implementation 'org.modelmapper:modelmapper:3.2.0' // Entity ↔ DTO 자동 매핑
+    
+    // Development Tools
+    compileOnly 'org.projectlombok:lombok' // 보일러플레이트 코드 자동 생성
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // 핫 리로드, 개발 도구
+    annotationProcessor 'org.projectlombok:lombok' // Lombok 어노테이션 프로세서
+    
+    // Environment Configuration
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0' // .env 파일 지원
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit 5, Mockito, Spring Test
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
 }
 
 tasks.named('test') {
