@@ -49,6 +49,9 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools' // 핫 리로드, 개발 도구
     annotationProcessor 'org.projectlombok:lombok' // Lombok 어노테이션 프로세서
     
+    // Environment Configuration
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0' // .env 파일 지원
+    
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit 5, Mockito, Spring Test
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
