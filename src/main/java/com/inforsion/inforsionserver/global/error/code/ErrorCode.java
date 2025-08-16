@@ -56,15 +56,11 @@ public enum ErrorCode {
     INVALID_EMAIL_FORMAT("V003", "이메일 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     INVALID_PHONE_FORMAT("V004", "전화번호 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 
-    // Custom Field Errors
-    CUSTOM_FIELD_NOT_FOUND("CF001", "커스텀 필드를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    DUPLICATE_FIELD_NAME("CF002", "이미 존재하는 필드명입니다.", HttpStatus.BAD_REQUEST),
-    REQUIRED_CUSTOM_FIELD_MISSING("CF003", "필수 커스텀 필드가 누락되었습니다.", HttpStatus.BAD_REQUEST),
-
     // Transaction Errors
     TRANSACTION_NOT_FOUND("T001", "거래를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     INVALID_TRANSACTION_AMOUNT("T002", "잘못된 거래 금액입니다.", HttpStatus.BAD_REQUEST),
     TRANSACTION_ALREADY_PROCESSED("T003", "이미 처리된 거래입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_TRANSACTION_CATEGORY("T004", "거래 유형과 카테고리가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
 
     // Access Errors
     ACCESS_DENIED("AC001", "접근이 거부되었습니다.", HttpStatus.FORBIDDEN);

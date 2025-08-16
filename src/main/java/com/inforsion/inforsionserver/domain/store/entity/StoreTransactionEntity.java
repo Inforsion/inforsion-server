@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.store.entity;
 
 import com.inforsion.inforsionserver.global.enums.TransactionType;
+import com.inforsion.inforsionserver.global.enums.TransactionCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,7 +9,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "store_transactions")
@@ -38,8 +38,9 @@ public class StoreTransactionEntity {
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
-    @Column(length = 50)
-    private String category;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TransactionCategory category;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -52,8 +53,5 @@ public class StoreTransactionEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
-
-    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<TransactionCustomFieldValueEntity> fieldValues;
 
 }

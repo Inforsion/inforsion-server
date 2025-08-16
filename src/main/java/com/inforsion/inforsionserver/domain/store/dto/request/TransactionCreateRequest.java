@@ -1,13 +1,13 @@
 package com.inforsion.inforsionserver.domain.store.dto.request;
 
 import com.inforsion.inforsionserver.global.enums.TransactionType;
+import com.inforsion.inforsionserver.global.enums.TransactionCategory;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Getter
 @NoArgsConstructor
@@ -26,14 +26,12 @@ public class TransactionCreateRequest {
     @NotNull(message = "거래 유형은 필수입니다")
     private TransactionType type;
 
+    @NotNull(message = "거래 카테고리는 필수입니다")
+    private TransactionCategory category;
+
     @NotNull(message = "거래 일시는 필수입니다")
     private LocalDateTime transactionDate;
 
-    @Size(max = 50, message = "카테고리는 50자 이하여야 합니다")
-    private String category;
-
     @NotNull(message = "가게 ID는 필수입니다")
     private Integer storeId;
-
-    private Map<Integer, String> customFieldValues;
 }
