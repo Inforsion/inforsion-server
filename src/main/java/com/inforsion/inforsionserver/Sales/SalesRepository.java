@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.management;
+package com.inforsion.inforsionserver.Sales;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

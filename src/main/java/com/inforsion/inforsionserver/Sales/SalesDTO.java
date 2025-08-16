@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.management;
+package com.inforsion.inforsionserver.Sales;
 
 import java.time.LocalDateTime;
 

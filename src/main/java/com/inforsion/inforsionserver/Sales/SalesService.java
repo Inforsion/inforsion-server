@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.management;
+package com.inforsion.inforsionserver.Sales;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

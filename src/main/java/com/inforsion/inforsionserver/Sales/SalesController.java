@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.management;
+package com.inforsion.inforsionserver.Sales;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

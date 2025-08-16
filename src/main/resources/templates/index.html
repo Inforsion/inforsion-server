@@ -1,10 +1,25 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+	<meta charset="UTF-8">
+	<title>Insert title here</title>
 </head>
+
 <body>
-<a th:href="@{/sales}">매출관리</a>
+	<a th:href="@{/sales}">매출관리</a>
+	<form action="/api/user" method="post">
+		<label for="username">이름:</label><br>
+		<input type="text" id="name" name="name"><br><br>
+
+		<label for="email">이메일:</label><br>
+		<input type="email" id="email" name="email"><br><br>
+
+		<label for="password">비밀번호:</label><br>
+		<input type="password" id="password" name="password"><br><br>
+
+		<button type="submit">등록</button>
+	</form>
 </body>
+
 </html>
