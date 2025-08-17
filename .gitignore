@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Mac 환경 파일 ###
+.DS_Store
+
+### Environment Variables ###
+.env
