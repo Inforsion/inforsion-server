@@ -40,7 +40,7 @@ dependencies {
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
     
     // API Documentation
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0' // Swagger UI, OpenAPI 3.0
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0' // Swagger UI, OpenAPI 3.0
     
     // JWT Authentication
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3' // JWT API 인터페이스
@@ -60,7 +60,9 @@ dependencies {
     
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit 5, Mockito, Spring Test
+    testImplementation 'org.springframework.security:spring-security-test' // Spring Security Test 지원
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
+    testRuntimeOnly 'com.h2database:h2' // H2 in-memory database for testing
 }
 
 tasks.named('test') {
