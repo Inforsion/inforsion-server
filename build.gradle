@@ -60,7 +60,9 @@ dependencies {
     
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit 5, Mockito, Spring Test
+    testImplementation 'org.springframework.security:spring-security-test' // Spring Security Test 지원
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
+    testRuntimeOnly 'com.h2database:h2' // H2 in-memory database for testing
 }
 
 tasks.named('test') {

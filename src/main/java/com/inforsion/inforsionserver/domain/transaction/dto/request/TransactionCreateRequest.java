@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.store.dto.request;
+package com.inforsion.inforsionserver.domain.transaction.dto.request;
 
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 import com.inforsion.inforsionserver.global.enums.TransactionCategory;

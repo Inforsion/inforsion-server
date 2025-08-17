@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.store.dto.response;
+package com.inforsion.inforsionserver.domain.transaction.dto.response;
 
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 import com.inforsion.inforsionserver.global.enums.TransactionCategory;

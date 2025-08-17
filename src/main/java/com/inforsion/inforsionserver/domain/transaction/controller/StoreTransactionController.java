@@ -1,8 +1,8 @@
-package com.inforsion.inforsionserver.domain.store.controller;
+package com.inforsion.inforsionserver.domain.transaction.controller;
 
-import com.inforsion.inforsionserver.domain.store.dto.request.TransactionCreateRequest;
-import com.inforsion.inforsionserver.domain.store.dto.response.TransactionResponse;
-import com.inforsion.inforsionserver.domain.store.service.StoreTransactionService;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionCreateRequest;
+import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponse;
+import com.inforsion.inforsionserver.domain.transaction.service.StoreTransactionService;
 import com.inforsion.inforsionserver.global.enums.TransactionCategory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

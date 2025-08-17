@@ -18,6 +18,8 @@ public enum TransactionCategory {
     FIXED_COST("고정비", TransactionType.EXPENSE),
     UTILITY_COST("공과금", TransactionType.EXPENSE),
     LABOR_COST("인건비", TransactionType.EXPENSE),
+    TAX("세금", TransactionType.EXPENSE),
+    REFUND("환불", TransactionType.EXPENSE),
     OTHER_EXPENSE("기타 지출", TransactionType.EXPENSE);
     
     private final String description;

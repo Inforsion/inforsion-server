@@ -1,11 +1,11 @@
-package com.inforsion.inforsionserver.domain.store.service;
+package com.inforsion.inforsionserver.domain.transaction.service;
 
-import com.inforsion.inforsionserver.domain.store.dto.request.TransactionCreateRequest;
-import com.inforsion.inforsionserver.domain.store.dto.response.TransactionResponse;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionCreateRequest;
+import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponse;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
-import com.inforsion.inforsionserver.domain.store.entity.StoreTransactionEntity;
+import com.inforsion.inforsionserver.domain.transaction.entity.StoreTransactionEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
-import com.inforsion.inforsionserver.domain.store.repository.StoreTransactionRepository;
+import com.inforsion.inforsionserver.domain.transaction.repository.StoreTransactionRepository;
 import com.inforsion.inforsionserver.global.error.exception.BusinessException;
 import com.inforsion.inforsionserver.global.error.code.ErrorCode;
 import lombok.RequiredArgsConstructor;

@@ -1,5 +1,6 @@
-package com.inforsion.inforsionserver.domain.store.entity;
+package com.inforsion.inforsionserver.domain.transaction.entity;
 
+import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 import com.inforsion.inforsionserver.global.enums.TransactionCategory;
 import jakarta.persistence.*;
