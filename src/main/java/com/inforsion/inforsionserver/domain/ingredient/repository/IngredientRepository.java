@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface IngredientRepository extends JpaRepository<IngredientEntity, Integer>, QuerydslPredicateExecutor<IngredientEntity>, IngredientRepositoryCustom {
     
-    Optional<IngredientEntity> findByName(String name);
+    List<IngredientEntity> findByName(String name);
     
     List<IngredientEntity> findByProductId(Integer productId);
     
