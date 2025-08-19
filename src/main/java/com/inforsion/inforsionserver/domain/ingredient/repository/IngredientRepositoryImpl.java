@@ -1,9 +1,12 @@
 package com.inforsion.inforsionserver.domain.ingredient.repository;
 
+import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
 import com.inforsion.inforsionserver.domain.ingredient.entity.QIngredientEntity;
 import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
 import com.inforsion.inforsionserver.domain.product.entity.QProductEntity;
+import com.inforsion.inforsionserver.domain.store.entity.QStoreEntity;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -105,5 +108,56 @@ public class IngredientRepositoryImpl implements IngredientRepositoryCustom {
                 .from(ingredient)
                 .where(ingredient.product.id.eq(productId))
                 .fetchOne();
+    }
+
+    /**
+     * 동적 조건을 사용한 재료 검색
+     * 
+     * IngredientSearchRequest의 각 필드를 기반으로 동적 쿼리를 생성합니다.
+     * null이 아닌 필드들만을 조건으로 사용하여 유연한 검색을 제공합니다.
+     * 
+     * @param request 검색 조건 DTO
+     * @return 검색 조건에 맞는 재료 목록
+     */
+    @Override
+    public List<IngredientEntity> searchIngredients(IngredientSearchRequest request) {
+        QIngredientEntity ingredient = QIngredientEntity.ingredientEntity;
+        QProductEntity product = QProductEntity.productEntity;
+        QStoreEntity store = QStoreEntity.storeEntity;
+        
+        BooleanBuilder builder = new BooleanBuilder();
+        
+        // 재료명 부분 검색
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            builder.and(ingredient.name.containsIgnoreCase(request.getName().trim()));
+        }
+        
+        // 상품 ID 조건
+        if (request.getProductId() != null) {
+            builder.and(ingredient.product.id.eq(request.getProductId()));
+        }
+        
+        // 가게 ID 조건
+        if (request.getStoreId() != null) {
+            builder.and(product.store.id.eq(request.getStoreId()));
+        }
+        
+        // 단위 조건
+        if (request.getUnit() != null && !request.getUnit().trim().isEmpty()) {
+            builder.and(ingredient.unit.eq(request.getUnit().trim()));
+        }
+        
+        // 활성화 상태 조건
+        if (request.getIsActive() != null) {
+            builder.and(ingredient.isActive.eq(request.getIsActive()));
+        }
+        
+        return queryFactory
+                .selectFrom(ingredient)
+                .leftJoin(ingredient.product, product).fetchJoin()
+                .leftJoin(product.store, store).fetchJoin()
+                .where(builder)
+                .orderBy(ingredient.createdAt.desc())
+                .fetch();
     }
 }

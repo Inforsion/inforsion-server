@@ -90,4 +90,22 @@ public class IngredientEntity {
     public boolean hasImage() {
         return imageUrl != null && !imageUrl.isBlank();
     }
+
+    /**
+     * 활성화 상태 업데이트
+     */
+    public void updateActiveStatus(Boolean isActive) {
+        if (isActive != null) {
+            this.isActive = isActive;
+        }
+    }
+
+    /**
+     * 이미지 메타데이터 업데이트
+     */
+    public void updateImageMetadata(String imageUrl, String originalFileName, String s3Key) {
+        if (imageUrl != null) this.imageUrl = imageUrl;
+        if (originalFileName != null) this.originalFileName = originalFileName;
+        if (s3Key != null) this.s3Key = s3Key;
+    }
 }
