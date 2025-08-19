@@ -44,6 +44,15 @@ public class StoreEntity {
     @Column(name = "opening_hours", columnDefinition = "JSON")
     private String openingHours;
 
+    @Column(name = "thumbnail_url", length = 255)
+    private String thumbnailUrl;
+
+    @Column(name = "original_filename")
+    private String originalFileName;
+
+    @Column(name = "s3_key")
+    private String s3Key;
+
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -75,5 +84,21 @@ public class StoreEntity {
         if (businessRegistrationNumber != null) this.businessRegistrationNumber = businessRegistrationNumber;
         if (openingHours != null) this.openingHours = openingHours;
         if (isActive != null) this.isActive = isActive;
+    }
+
+    /**
+     * 썸네일 이미지 메타데이터 업데이트
+     */
+    public void updateThumbnailMetadata(String thumbnailUrl, String originalFileName, String s3Key) {
+        if (thumbnailUrl != null) this.thumbnailUrl = thumbnailUrl;
+        if (originalFileName != null) this.originalFileName = originalFileName;
+        if (s3Key != null) this.s3Key = s3Key;
+    }
+
+    /**
+     * 썸네일 이미지 보유 확인
+     */
+    public boolean hasThumbnail() {
+        return thumbnailUrl != null && !thumbnailUrl.isBlank();
     }
 }
