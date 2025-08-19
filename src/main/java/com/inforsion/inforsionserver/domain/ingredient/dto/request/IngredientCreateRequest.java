@@ -14,10 +14,10 @@ import java.math.BigDecimal;
 @Builder
 public class IngredientCreateRequest {
 
-    @Schema(description = "재료명", example = "원두")
-    @NotBlank(message = "재료명은 필수입니다.")
-    @Size(max = 100, message = "재료명은 100자 이하 여야 합니다.")
-    private String name;
+    @Schema(description = "재고 ID", example = "1")
+    @NotNull(message = "재고 ID는 필수입니다")
+    @Positive(message = "재고 ID는 양수여야 합니다")
+    private Integer inventoryId;
 
     @Schema(description = "상품 1개당 필요한 재료량", example = "15.5")
     @NotNull(message = "재료량은 필수입니다")

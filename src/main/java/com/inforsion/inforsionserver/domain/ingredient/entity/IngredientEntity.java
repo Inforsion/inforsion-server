@@ -14,7 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "ingredients",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name", "product_id"})
+        @UniqueConstraint(columnNames = {"product_id", "inventory_id"})
     })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -26,9 +26,6 @@ public class IngredientEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String name;
-
     @Column(name = "amount_per_product", nullable = false, precision = 10, scale = 2)
     private BigDecimal amountPerProduct;
 
@@ -38,16 +35,9 @@ public class IngredientEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    @Column(name = "original_filename")
-    private String originalFileName;
-
-    @Column(name = "s3_key")
-    private String s3Key;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp
@@ -62,34 +52,20 @@ public class IngredientEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
-    @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<InventoryEntity> inventories;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inventory_id")
+    private InventoryEntity inventory;
 
 
     /**
      * 재료 정보 업데이트
      */
-    public void update(String name, BigDecimal amountPerProduct, String unit, String description, String imageUrl) {
-        if (name != null) this.name = name;
+    public void update(BigDecimal amountPerProduct, String unit, String description) {
         if (amountPerProduct != null) this.amountPerProduct = amountPerProduct;
         if (unit != null) this.unit = unit;
         if (description != null) this.description = description;
-        if (imageUrl != null) this.imageUrl = imageUrl;
     }
 
-    /**
-     * 이미지 URL만 업데이트
-     */
-    public void updateImageUrl(String imageUrl) {
-        if (imageUrl != null) this.imageUrl = imageUrl;
-    }
-
-    /**
-     * 이미지 보유 확인
-     */
-    public boolean hasImage() {
-        return imageUrl != null && !imageUrl.isBlank();
-    }
 
     /**
      * 활성화 상태 업데이트
@@ -100,12 +76,4 @@ public class IngredientEntity {
         }
     }
 
-    /**
-     * 이미지 메타데이터 업데이트
-     */
-    public void updateImageMetadata(String imageUrl, String originalFileName, String s3Key) {
-        if (imageUrl != null) this.imageUrl = imageUrl;
-        if (originalFileName != null) this.originalFileName = originalFileName;
-        if (s3Key != null) this.s3Key = s3Key;
-    }
 }

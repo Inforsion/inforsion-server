@@ -13,9 +13,9 @@ import java.math.BigDecimal;
 @Builder
 public class IngredientUpdateRequest {
 
-    @Schema(description = "재료명", example = "원두")
-    @Size(max = 100, message = "재료명은 100자 이하 여야 합니다.")
-    private String name;
+    @Schema(description = "재고 ID", example = "2")
+    @Positive(message = "재고 ID는 양수여야 합니다")
+    private Integer inventoryId;
 
     @Schema(description = "상품 1개당 필요한 재료량", example = "20.0")
     @DecimalMin(value = "0.0", inclusive = false, message = "재료량은 0보다 커야 합니다")

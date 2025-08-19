@@ -12,16 +12,13 @@ import jakarta.validation.constraints.Positive;
 @Builder
 public class IngredientSearchRequest {
 
-    @Schema(description = "재료명 (부분 검색)", example = "원두")
-    private String name;
-
     @Schema(description = "상품 ID", example = "1")
     @Positive(message = "상품 ID는 양수여야 합니다")
     private Integer productId;
 
-    @Schema(description = "가게 ID", example = "1")
-    @Positive(message = "가게 ID는 양수여야 합니다")
-    private Integer storeId;
+    @Schema(description = "재고 ID", example = "1")
+    @Positive(message = "재고 ID는 양수여야 합니다")
+    private Integer inventoryId;
 
     @Schema(description = "단위", example = "g")
     private String unit;

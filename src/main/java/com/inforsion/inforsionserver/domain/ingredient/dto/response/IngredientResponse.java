@@ -16,8 +16,11 @@ public class IngredientResponse {
     @Schema(description = "재료 ID")
     private Integer id;
 
-    @Schema(description = "재료명")
-    private String name;
+    @Schema(description = "재고 ID")
+    private Integer inventoryId;
+
+    @Schema(description = "재고명")
+    private String inventoryName;
 
     @Schema(description = "상품 1개당 필요한 재료량")
     private BigDecimal amountPerProduct;
@@ -28,17 +31,6 @@ public class IngredientResponse {
     @Schema(description = "재료 설명")
     private String description;
 
-    @Schema(description = "재료 이미지 URL")
-    private String imageUrl;
-
-    @Schema(description = "원본 파일명")
-    private String originalFileName;
-
-    @Schema(description = "S3 키 (내부 관리용)")
-    private String s3Key;
-
-    @Schema(description = "이미지 보유 여부")
-    private Boolean hasImage;
 
     @Schema(description = "활성화 상태")
     private Boolean isActive;
@@ -67,14 +59,11 @@ public class IngredientResponse {
     public static IngredientResponse from(IngredientEntity entity) {
         return IngredientResponse.builder()
                 .id(entity.getId())
-                .name(entity.getName())
+                .inventoryId(entity.getInventory() != null ? entity.getInventory().getId() : null)
+                .inventoryName(entity.getInventory() != null ? entity.getInventory().getName() : null)
                 .amountPerProduct(entity.getAmountPerProduct())
                 .unit(entity.getUnit())
                 .description(entity.getDescription())
-                .imageUrl(entity.getImageUrl())
-                .originalFileName(entity.getOriginalFileName())
-                .s3Key(entity.getS3Key())
-                .hasImage(entity.hasImage())
                 .isActive(entity.getIsActive())
                 .productId(entity.getProduct().getId())
                 .productName(entity.getProduct().getName())

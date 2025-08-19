@@ -11,11 +11,9 @@ import java.util.Optional;
 @Repository
 public interface IngredientRepository extends JpaRepository<IngredientEntity, Integer>, QuerydslPredicateExecutor<IngredientEntity>, IngredientRepositoryCustom {
     
-    List<IngredientEntity> findByName(String name);
-    
     List<IngredientEntity> findByProductId(Integer productId);
     
-    boolean existsByName(String name);
+    List<IngredientEntity> findByInventoryId(Integer inventoryId);
     
-    boolean existsByNameAndProductId(String name, Integer productId);
+    boolean existsByProductIdAndInventoryId(Integer productId, Integer inventoryId);
 }

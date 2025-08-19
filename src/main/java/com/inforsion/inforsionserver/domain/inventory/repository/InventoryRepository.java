@@ -13,10 +13,6 @@ public interface InventoryRepository extends JpaRepository<InventoryEntity, Inte
     
     List<InventoryEntity> findByStoreId(Integer storeId);
     
-    List<InventoryEntity> findByIngredientId(Integer ingredientId);
-    
-    List<InventoryEntity> findByStoreIdAndIngredientId(Integer storeId, Integer ingredientId);
-    
     List<InventoryEntity> findByExpiryDateBefore(LocalDateTime expiryDate);
     
     List<InventoryEntity> findByStoreIdAndExpiryDateBefore(Integer storeId, LocalDateTime expiryDate);
