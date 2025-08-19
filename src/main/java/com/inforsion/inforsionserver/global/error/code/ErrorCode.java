@@ -63,7 +63,14 @@ public enum ErrorCode {
     INVALID_TRANSACTION_CATEGORY("T004", "거래 유형과 카테고리가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
 
     // Access Errors
-    ACCESS_DENIED("AC001", "접근이 거부되었습니다.", HttpStatus.FORBIDDEN);
+    ACCESS_DENIED("AC001", "접근이 거부되었습니다.", HttpStatus.FORBIDDEN),
+
+    // File Upload Errors
+    FILE_UPLOAD_FAILED("F001", "파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_FILE_FORMAT("F002", "지원하지 않는 파일 형식입니다.", HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDED("F003", "파일 크기가 허용 범위를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    FILE_NOT_FOUND("F004", "파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    FILE_DELETE_FAILED("F005", "파일 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String message;

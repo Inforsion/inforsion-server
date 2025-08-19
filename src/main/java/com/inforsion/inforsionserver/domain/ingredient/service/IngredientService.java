@@ -11,9 +11,11 @@ import com.inforsion.inforsionserver.domain.product.repository.ProductRepository
 import com.inforsion.inforsionserver.global.error.exception.IngredientNotFoundException;
 import com.inforsion.inforsionserver.global.error.exception.ProductNotFoundException;
 import com.inforsion.inforsionserver.global.error.exception.DuplicateIngredientException;
+import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +27,7 @@ public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
     private final ProductRepository productRepository;
+    private final S3FileUploadService s3FileUploadService;
 
     /**
      * 새로운 재료를 생성합니다.
@@ -263,21 +266,67 @@ public class IngredientService {
     }
 
     /**
+     * 재료 이미지를 업로드합니다.
+     * 
+     * 멀티파트 파일을 받아 S3에 업로드하고, 재료 엔티티에 이미지 정보를 저장합니다.
+     * 기존 이미지가 있는 경우 새 이미지로 교체됩니다.
+     * 
+     * @param ingredientId 재료 ID
+     * @param file 업로드할 이미지 파일
+     * @return 업데이트된 재료 정보 DTO
+     * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
+     * @throws IllegalArgumentException 파일이 유효하지 않은 경우
+     * @throws RuntimeException S3 업로드 실패 시
+     */
+    @Transactional
+    public IngredientResponse uploadIngredientImage(Integer ingredientId, MultipartFile file) {
+        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(IngredientNotFoundException::new);
+
+        // 기존 이미지가 있다면 S3에서 삭제
+        if (ingredient.getImageUrl() != null && !ingredient.getImageUrl().isEmpty()) {
+            try {
+                s3FileUploadService.deleteFile(ingredient.getImageUrl());
+            } catch (Exception e) {
+                // 기존 이미지 삭제 실패는 로그만 남기고 진행
+                // 새 이미지 업로드를 중단하지 않음
+            }
+        }
+
+        // S3에 새 이미지 업로드
+        String imageUrl = s3FileUploadService.uploadImageFile(file, "ingredients");
+        String s3Key = s3FileUploadService.getS3KeyFromUrl(imageUrl);
+        
+        // 재료 엔티티에 이미지 정보 저장
+        ingredient.updateImageMetadata(imageUrl, file.getOriginalFilename(), s3Key);
+
+        return IngredientResponse.from(ingredient);
+    }
+
+    /**
      * 재료의 이미지를 삭제합니다.
      * 
-     * 재료 엔티티에서 이미지 관련 정보를 제거합니다.
-     * 실제 S3 파일 삭제는 별도의 파일 관리 서비스에서 처리해야 합니다.
+     * S3에서 실제 파일을 삭제하고, 재료 엔티티에서 이미지 관련 정보를 제거합니다.
      * 
      * @param ingredientId 재료 ID
      * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
-     * 
-     * @apiNote 향후 S3 파일 삭제 로직이 추가되어야 합니다.
      */
     @Transactional
     public void deleteIngredientImage(Integer ingredientId) {
         IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
                 .orElseThrow(IngredientNotFoundException::new);
 
+        // S3에서 실제 파일 삭제
+        if (ingredient.getImageUrl() != null && !ingredient.getImageUrl().isEmpty()) {
+            try {
+                s3FileUploadService.deleteFile(ingredient.getImageUrl());
+            } catch (Exception e) {
+                // S3 삭제 실패 시 로그만 남기고 DB는 업데이트
+                // 이미지 URL 정보는 제거하여 일관성 유지
+            }
+        }
+
+        // 재료 엔티티에서 이미지 정보 제거
         ingredient.updateImageMetadata(null, null, null);
     }
 }

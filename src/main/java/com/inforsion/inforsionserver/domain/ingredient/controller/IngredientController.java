@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -107,14 +108,12 @@ public class IngredientController {
         return ResponseEntity.ok(count);
     }
 
-    @Operation(summary = "재료 이미지 업데이트", description = "특정 재료의 이미지를 업데이트합니다.")
+    @Operation(summary = "재료 이미지 업로드", description = "특정 재료의 이미지를 업로드합니다.")
     @PostMapping("/{ingredientId}/image")
-    public ResponseEntity<IngredientResponse> updateIngredientImage(
+    public ResponseEntity<IngredientResponse> uploadIngredientImage(
             @PathVariable Integer ingredientId,
-            @RequestParam String imageUrl,
-            @RequestParam(required = false) String originalFileName,
-            @RequestParam(required = false) String s3Key) {
-        IngredientResponse response = ingredientService.updateIngredientImage(ingredientId, imageUrl, originalFileName, s3Key);
+            @RequestParam("file") MultipartFile file) {
+        IngredientResponse response = ingredientService.uploadIngredientImage(ingredientId, file);
         return ResponseEntity.ok(response);
     }
 
