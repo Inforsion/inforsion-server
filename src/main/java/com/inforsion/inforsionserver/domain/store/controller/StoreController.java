@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Tag(name = "Store", description = "가게 관리 API")
 @RestController
 @RequiredArgsConstructor
@@ -32,6 +34,39 @@ public class StoreController {
             @RequestBody StoreDto.CreateRequest request) {
         StoreDto.Response response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+            summary = "사용자별 가게 목록 조회", 
+            description = "특정 사용자가 소유한 모든 가게 목록을 조회합니다. isActive 파라미터로 활성 상태를 필터링할 수 있습니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200", 
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = StoreDto.Response.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404", 
+                    description = "사용자를 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<StoreDto.Response>> getStoresByUserId(
+            @Parameter(description = "사용자 ID", required = true, example = "1")
+            @PathVariable Integer userId,
+            @Parameter(description = "활성 상태 필터 (true: 활성, false: 비활성, null: 전체)", example = "true")
+            @RequestParam(required = false) Boolean isActive) {
+        
+        List<StoreDto.Response> responses;
+        if (isActive != null) {
+            responses = storeService.getStoresByUserIdAndStatus(userId, isActive);
+        } else {
+            responses = storeService.getStoresByUserId(userId);
+        }
+        
+        return ResponseEntity.ok(responses);
     }
 
     @Operation(summary = "가게 단건 조회", description = "특정 가게의 상세 정보를 조회합니다.")

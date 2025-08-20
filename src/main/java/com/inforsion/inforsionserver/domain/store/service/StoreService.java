@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -46,6 +49,45 @@ public class StoreService {
     public StoreDto.Response getStore(Integer storeId) {
         StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
         return StoreDto.Response.from(store);
+    }
+
+    /**
+     * 특정 사용자가 소유한 모든 가게를 조회합니다.
+     * 
+     * @param userId 사용자 ID
+     * @return 사용자가 소유한 가게 목록
+     * @throws UserNotFoundException 사용자가 존재하지 않는 경우
+     */
+    public List<StoreDto.Response> getStoresByUserId(Integer userId) {
+        // 사용자 존재 여부 확인
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException();
+        }
+
+        List<StoreEntity> stores = storeRepository.findByUserId(userId);
+        return stores.stream()
+                .map(StoreDto.Response::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 특정 사용자가 소유한 활성 상태인 가게만 조회합니다.
+     * 
+     * @param userId 사용자 ID
+     * @param isActive 활성 상태 (true: 활성, false: 비활성)
+     * @return 조건에 맞는 가게 목록
+     * @throws UserNotFoundException 사용자가 존재하지 않는 경우
+     */
+    public List<StoreDto.Response> getStoresByUserIdAndStatus(Integer userId, Boolean isActive) {
+        // 사용자 존재 여부 확인
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException();
+        }
+
+        List<StoreEntity> stores = storeRepository.findByUserIdAndIsActive(userId, isActive);
+        return stores.stream()
+                .map(StoreDto.Response::from)
+                .collect(Collectors.toList());
     }
 
     @Transactional

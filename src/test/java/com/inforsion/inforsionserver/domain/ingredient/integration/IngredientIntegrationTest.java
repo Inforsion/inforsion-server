@@ -2,6 +2,7 @@ package com.inforsion.inforsionserver.domain.ingredient.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientCreateRequest;
+import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientUpdateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
 import com.inforsion.inforsionserver.domain.ingredient.repository.IngredientRepository;
@@ -70,6 +71,7 @@ class IngredientIntegrationTest {
         userRepository.deleteAll();
 
         UserEntity user = UserEntity.builder()
+                .username("testuser")
                 .email("test@example.com")
                 .password("password")
                 .build();
@@ -111,9 +113,18 @@ class IngredientIntegrationTest {
     @Test
     @DisplayName("재료 생성 통합 테스트 - 성공")
     void createIngredientIntegrationTest_success() throws Exception {
+        // 새로운 인벤토리 생성
+        InventoryEntity newInventory = InventoryEntity.builder()
+                .name("New Test Inventory")
+                .quantity(java.math.BigDecimal.valueOf(50.0))
+                .unit("ml")
+                .store(product.getStore())
+                .build();
+        inventoryRepository.save(newInventory);
+
         IngredientCreateRequest request = new IngredientCreateRequest();
         request.setProductId(product.getId());
-        request.setInventoryId(inventory.getId());
+        request.setInventoryId(newInventory.getId());
         request.setAmountPerProduct(java.math.BigDecimal.valueOf(5.0));
         request.setUnit("ml");
         request.setDescription("New Ingredient for Integration Test");
@@ -141,9 +152,14 @@ class IngredientIntegrationTest {
     @Test
     @DisplayName("재료 검색 통합 테스트 - 상품 ID로 검색")
     void searchIngredientsIntegrationTest_byProductId() throws Exception {
-        mockMvc.perform(get("/api/v1/ingredients/search")
-                        .param("productId", product.getId().toString())
-                        .accept(MediaType.APPLICATION_JSON))
+        IngredientSearchRequest searchRequest = IngredientSearchRequest.builder()
+                .productId(product.getId())
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(post("/api/v1/ingredients/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(ingredient.getId()));
     }
@@ -179,5 +195,41 @@ class IngredientIntegrationTest {
                 .andExpect(status().isNoContent());
 
         assertThat(ingredientRepository.findById(ingredient.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("상품별 재료 조회 통합 테스트 - 성공")
+    void getIngredientsByProductIntegrationTest_success() throws Exception {
+        mockMvc.perform(get("/api/v1/ingredients/product/{productId}", product.getId())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(ingredient.getId()))
+                .andExpect(jsonPath("$[0].productName").value(product.getName()));
+    }
+
+    @Test
+    @DisplayName("재료 생성 통합 테스트 - 중복 재료 실패")
+    void createIngredientIntegrationTest_duplicateFail() throws Exception {
+        IngredientCreateRequest request = new IngredientCreateRequest();
+        request.setProductId(product.getId());
+        request.setInventoryId(inventory.getId()); // 이미 사용 중인 조합
+        request.setAmountPerProduct(java.math.BigDecimal.valueOf(20.0));
+        request.setUnit("kg");
+        request.setDescription("Duplicate Ingredient");
+
+        mockMvc.perform(post("/api/v1/ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict()); // 409 Conflict 예상
+
+        assertThat(ingredientRepository.findAll()).hasSize(1); // 여전히 1개만 존재
+    }
+
+    @Test
+    @DisplayName("재료 조회 통합 테스트 - 존재하지 않는 재료")
+    void getIngredientIntegrationTest_notFound() throws Exception {
+        mockMvc.perform(get("/api/v1/ingredients/{ingredientId}", 99999)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

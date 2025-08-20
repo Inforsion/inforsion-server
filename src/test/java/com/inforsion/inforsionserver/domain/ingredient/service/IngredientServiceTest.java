@@ -267,6 +267,29 @@ class IngredientServiceTest {
     }
 
     @Test
+    @DisplayName("재료 정보 수정 - 재고 변경 성공")
+    void updateIngredient_changeInventory_success() {
+        IngredientUpdateRequest request = new IngredientUpdateRequest();
+        request.setInventoryId(2);
+        request.setAmountPerProduct(BigDecimal.valueOf(20.0));
+        request.setUnit("ml");
+
+        InventoryEntity newInventory = InventoryEntity.builder().id(2).name("New Inventory").build();
+
+        given(ingredientRepository.findById(1)).willReturn(Optional.of(ingredient));
+        given(ingredientRepository.existsByProductIdAndInventoryId(ingredient.getProduct().getId(), request.getInventoryId()))
+                .willReturn(false);
+        given(inventoryRepository.findById(2)).willReturn(Optional.of(newInventory));
+
+        IngredientResponse response = ingredientService.updateIngredient(1, request);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(1);
+        verify(ingredientRepository).findById(1);
+        verify(inventoryRepository).findById(2);
+    }
+
+    @Test
     @DisplayName("재료 삭제 - 성공")
     void deleteIngredient_success() {
         given(ingredientRepository.findById(1)).willReturn(Optional.of(ingredient));
