@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 
 @Schema(description = "재료 생성 요청 DTO")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

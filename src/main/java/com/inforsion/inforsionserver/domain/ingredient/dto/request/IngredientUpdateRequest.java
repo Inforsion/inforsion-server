@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 @Schema(description = "재료 수정 요청 DTO")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

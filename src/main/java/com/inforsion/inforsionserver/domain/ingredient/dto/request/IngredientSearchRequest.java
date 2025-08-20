@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 
 @Schema(description = "재료 검색 요청 DTO")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
