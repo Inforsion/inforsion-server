@@ -26,7 +26,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/ocr")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(
+    originPatterns = {"http://localhost:*", "http://127.0.0.1:*", "http://10.0.2.2:*", "http://192.168.*.*:*"},
+    allowedHeaders = "*",
+    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
+)
 public class OcrController {
 
     private final OcrService ocrService;
