@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -199,5 +201,142 @@ class StoreServiceTest {
                 .isInstanceOf(StoreNotFoundException.class);
         
         verify(storeRepository).findById(storeId);
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공")
+    void getStoresByUserId_Success() {
+        // given
+        Integer userId = 1;
+        StoreEntity store2 = StoreEntity.builder()
+                .id(2)
+                .name("두 번째 가게")
+                .location("서울시 서초구")
+                .description("두 번째 테스트용 가게")
+                .isActive(true)
+                .user(testUser)
+                .build();
+        
+        List<StoreEntity> stores = Arrays.asList(testStore, store2);
+        
+        given(userRepository.existsById(userId)).willReturn(true);
+        given(storeRepository.findByUserId(userId)).willReturn(stores);
+
+        // when
+        List<StoreDto.Response> responses = storeService.getStoresByUserId(userId);
+
+        // then
+        assertThat(responses).hasSize(2);
+        assertThat(responses.get(0).getId()).isEqualTo(testStore.getId());
+        assertThat(responses.get(0).getName()).isEqualTo(testStore.getName());
+        assertThat(responses.get(1).getId()).isEqualTo(store2.getId());
+        assertThat(responses.get(1).getName()).isEqualTo(store2.getName());
+        
+        verify(userRepository).existsById(userId);
+        verify(storeRepository).findByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 실패 - 존재하지 않는 사용자")
+    void getStoresByUserId_UserNotFound() {
+        // given
+        Integer userId = 999;
+        given(userRepository.existsById(userId)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoresByUserId(userId))
+                .isInstanceOf(UserNotFoundException.class);
+        
+        verify(userRepository).existsById(userId);
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공 - 빈 목록")
+    void getStoresByUserId_EmptyList() {
+        // given
+        Integer userId = 1;
+        given(userRepository.existsById(userId)).willReturn(true);
+        given(storeRepository.findByUserId(userId)).willReturn(Arrays.asList());
+
+        // when
+        List<StoreDto.Response> responses = storeService.getStoresByUserId(userId);
+
+        // then
+        assertThat(responses).isEmpty();
+        
+        verify(userRepository).existsById(userId);
+        verify(storeRepository).findByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("사용자별 활성 가게 목록 조회 성공")
+    void getStoresByUserIdAndStatus_ActiveStores() {
+        // given
+        Integer userId = 1;
+        Boolean isActive = true;
+        
+        List<StoreEntity> activeStores = Arrays.asList(testStore);
+        
+        given(userRepository.existsById(userId)).willReturn(true);
+        given(storeRepository.findByUserIdAndIsActive(userId, isActive)).willReturn(activeStores);
+
+        // when
+        List<StoreDto.Response> responses = storeService.getStoresByUserIdAndStatus(userId, isActive);
+
+        // then
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getId()).isEqualTo(testStore.getId());
+        assertThat(responses.get(0).getIsActive()).isTrue();
+        
+        verify(userRepository).existsById(userId);
+        verify(storeRepository).findByUserIdAndIsActive(userId, isActive);
+    }
+
+    @Test
+    @DisplayName("사용자별 비활성 가게 목록 조회 성공")
+    void getStoresByUserIdAndStatus_InactiveStores() {
+        // given
+        Integer userId = 1;
+        Boolean isActive = false;
+        
+        StoreEntity inactiveStore = StoreEntity.builder()
+                .id(3)
+                .name("비활성 가게")
+                .location("서울시 마포구")
+                .description("비활성 상태의 가게")
+                .isActive(false)
+                .user(testUser)
+                .build();
+        
+        List<StoreEntity> inactiveStores = Arrays.asList(inactiveStore);
+        
+        given(userRepository.existsById(userId)).willReturn(true);
+        given(storeRepository.findByUserIdAndIsActive(userId, isActive)).willReturn(inactiveStores);
+
+        // when
+        List<StoreDto.Response> responses = storeService.getStoresByUserIdAndStatus(userId, isActive);
+
+        // then
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getId()).isEqualTo(inactiveStore.getId());
+        assertThat(responses.get(0).getIsActive()).isFalse();
+        
+        verify(userRepository).existsById(userId);
+        verify(storeRepository).findByUserIdAndIsActive(userId, isActive);
+    }
+
+    @Test
+    @DisplayName("사용자별 활성 상태별 가게 목록 조회 실패 - 존재하지 않는 사용자")
+    void getStoresByUserIdAndStatus_UserNotFound() {
+        // given
+        Integer userId = 999;
+        Boolean isActive = true;
+        given(userRepository.existsById(userId)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoresByUserIdAndStatus(userId, isActive))
+                .isInstanceOf(UserNotFoundException.class);
+        
+        verify(userRepository).existsById(userId);
     }
 }

@@ -80,6 +80,14 @@ public class StoreDto {
         private LocalDateTime updatedAt;
         @Schema(description = "가게 소유주 ID")
         private Integer userId;
+        @Schema(description = "가게 썸네일 이미지 URL")
+        private String thumbnailUrl;
+        @Schema(description = "원본 파일명")
+        private String originalFileName;
+        @Schema(description = "S3 키 (내부 관리용)")
+        private String s3Key;
+        @Schema(description = "썸네일 이미지 보유 여부")
+        private Boolean hasThumbnail;
 
         public static Response from(StoreEntity store) {
             return Response.builder()
@@ -95,6 +103,10 @@ public class StoreDto {
                     .createdAt(store.getCreatedAt())
                     .updatedAt(store.getUpdatedAt())
                     .userId(store.getUser().getId())
+                    .thumbnailUrl(store.getThumbnailUrl())
+                    .originalFileName(store.getOriginalFileName())
+                    .s3Key(store.getS3Key())
+                    .hasThumbnail(store.hasThumbnail())
                     .build();
         }
     }

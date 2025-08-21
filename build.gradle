@@ -54,6 +54,14 @@ dependencies {
     compileOnly 'org.projectlombok:lombok' // 보일러플레이트 코드 자동 생성
     developmentOnly 'org.springframework.boot:spring-boot-devtools' // 핫 리로드, 개발 도구
     annotationProcessor 'org.projectlombok:lombok' // Lombok 어노테이션 프로세서
+
+    // AWS SDK v2
+    implementation 'software.amazon.awssdk:s3:2.20.162'
+    implementation 'software.amazon.awssdk:auth:2.20.162'
+    implementation 'software.amazon.awssdk:regions:2.20.162'
+
+    //파일 업로드 처리를 위한 설정
+    implementation 'commons-io:commons-io:2.11.0'
     
     // Environment Configuration
     implementation 'me.paulschwarz:spring-dotenv:4.0.0' // .env 파일 지원
@@ -67,4 +75,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'spring.profiles.active', 'test'
 }

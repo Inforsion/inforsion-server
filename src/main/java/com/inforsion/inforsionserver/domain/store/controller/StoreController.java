@@ -3,11 +3,20 @@ package com.inforsion.inforsionserver.domain.store.controller;
 import com.inforsion.inforsionserver.domain.store.dto.StoreDto;
 import com.inforsion.inforsionserver.domain.store.service.StoreService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Tag(name = "Store", description = "가게 관리 API")
 @RestController
@@ -25,6 +34,39 @@ public class StoreController {
             @RequestBody StoreDto.CreateRequest request) {
         StoreDto.Response response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+            summary = "사용자별 가게 목록 조회", 
+            description = "특정 사용자가 소유한 모든 가게 목록을 조회합니다. isActive 파라미터로 활성 상태를 필터링할 수 있습니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200", 
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = StoreDto.Response.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404", 
+                    description = "사용자를 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<StoreDto.Response>> getStoresByUserId(
+            @Parameter(description = "사용자 ID", required = true, example = "1")
+            @PathVariable Integer userId,
+            @Parameter(description = "활성 상태 필터 (true: 활성, false: 비활성, null: 전체)", example = "true")
+            @RequestParam(required = false) Boolean isActive) {
+        
+        List<StoreDto.Response> responses;
+        if (isActive != null) {
+            responses = storeService.getStoresByUserIdAndStatus(userId, isActive);
+        } else {
+            responses = storeService.getStoresByUserId(userId);
+        }
+        
+        return ResponseEntity.ok(responses);
     }
 
     @Operation(summary = "가게 단건 조회", description = "특정 가게의 상세 정보를 조회합니다.")
@@ -47,6 +89,66 @@ public class StoreController {
     @DeleteMapping("/{storeId}")
     public ResponseEntity<Void> deleteStore(@PathVariable Integer storeId) {
         storeService.deleteStore(storeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "가게 썸네일 이미지 업로드", 
+            description = "특정 가게의 썸네일 이미지를 S3에 업로드합니다. 지원 형식: JPEG, PNG, GIF. 최대 파일 크기: 10MB. 기존 이미지가 있는 경우 새 이미지로 교체됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200", 
+                    description = "썸네일 업로드 성공",
+                    content = @Content(schema = @Schema(implementation = StoreDto.Response.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400", 
+                    description = "잘못된 파일 형식 또는 크기 초과",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404", 
+                    description = "가게를 찾을 수 없음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500", 
+                    description = "S3 업로드 실패",
+                    content = @Content
+            )
+    })
+    @PostMapping("/{storeId}/thumbnail")
+    public ResponseEntity<StoreDto.Response> uploadStoreThumbnail(
+            @Parameter(description = "가게 ID", required = true, example = "1")
+            @PathVariable Integer storeId,
+            @Parameter(description = "업로드할 썸네일 이미지 파일", required = true)
+            @RequestParam("file") MultipartFile file) {
+        StoreDto.Response response = storeService.uploadStoreThumbnail(storeId, file);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "가게 썸네일 이미지 삭제", 
+            description = "특정 가게의 썸네일 이미지를 S3에서 삭제하고, 데이터베이스에서 이미지 정보를 제거합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204", 
+                    description = "썸네일 삭제 성공",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404", 
+                    description = "가게를 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @DeleteMapping("/{storeId}/thumbnail")
+    public ResponseEntity<Void> deleteStoreThumbnail(
+            @Parameter(description = "가게 ID", required = true, example = "1")
+            @PathVariable Integer storeId) {
+        storeService.deleteStoreThumbnail(storeId);
         return ResponseEntity.noContent().build();
     }
 }

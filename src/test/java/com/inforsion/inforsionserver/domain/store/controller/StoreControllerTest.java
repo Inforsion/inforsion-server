@@ -14,6 +14,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -215,6 +217,138 @@ class StoreControllerTest {
         // when & then
         mockMvc.perform(delete("/api/v1/stores/{storeId}", storeId)
                         )
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공 - 전체 조회")
+    void getStoresByUserId_Success() throws Exception {
+        // given
+        Integer userId = 1;
+        List<StoreDto.Response> responses = Arrays.asList(
+                StoreDto.Response.builder()
+                        .id(1)
+                        .name("첫 번째 가게")
+                        .location("서울시 강남구")
+                        .description("첫 번째 테스트 가게")
+                        .isActive(true)
+                        .userId(userId)
+                        .build(),
+                StoreDto.Response.builder()
+                        .id(2)
+                        .name("두 번째 가게")
+                        .location("서울시 서초구")
+                        .description("두 번째 테스트 가게")
+                        .isActive(false)
+                        .userId(userId)
+                        .build()
+        );
+
+        given(storeService.getStoresByUserId(userId)).willReturn(responses);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/stores/user/{userId}", userId))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("첫 번째 가게"))
+                .andExpect(jsonPath("$[0].isActive").value(true))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].name").value("두 번째 가게"))
+                .andExpect(jsonPath("$[1].isActive").value(false));
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공 - 활성 가게만")
+    void getStoresByUserId_ActiveOnly() throws Exception {
+        // given
+        Integer userId = 1;
+        Boolean isActive = true;
+        List<StoreDto.Response> responses = Arrays.asList(
+                StoreDto.Response.builder()
+                        .id(1)
+                        .name("활성 가게")
+                        .location("서울시 강남구")
+                        .description("활성 상태의 가게")
+                        .isActive(true)
+                        .userId(userId)
+                        .build()
+        );
+
+        given(storeService.getStoresByUserIdAndStatus(userId, isActive)).willReturn(responses);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/stores/user/{userId}", userId)
+                        .param("isActive", "true"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("활성 가게"))
+                .andExpect(jsonPath("$[0].isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공 - 비활성 가게만")
+    void getStoresByUserId_InactiveOnly() throws Exception {
+        // given
+        Integer userId = 1;
+        Boolean isActive = false;
+        List<StoreDto.Response> responses = Arrays.asList(
+                StoreDto.Response.builder()
+                        .id(2)
+                        .name("비활성 가게")
+                        .location("서울시 마포구")
+                        .description("비활성 상태의 가게")
+                        .isActive(false)
+                        .userId(userId)
+                        .build()
+        );
+
+        given(storeService.getStoresByUserIdAndStatus(userId, isActive)).willReturn(responses);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/stores/user/{userId}", userId)
+                        .param("isActive", "false"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(2))
+                .andExpect(jsonPath("$[0].name").value("비활성 가게"))
+                .andExpect(jsonPath("$[0].isActive").value(false));
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 성공 - 빈 목록")
+    void getStoresByUserId_EmptyList() throws Exception {
+        // given
+        Integer userId = 1;
+        List<StoreDto.Response> responses = Arrays.asList();
+
+        given(storeService.getStoresByUserId(userId)).willReturn(responses);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/stores/user/{userId}", userId))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DisplayName("사용자별 가게 목록 조회 실패 - 존재하지 않는 사용자")
+    void getStoresByUserId_UserNotFound() throws Exception {
+        // given
+        Integer userId = 999;
+        given(storeService.getStoresByUserId(userId)).willThrow(new UserNotFoundException());
+
+        // when & then
+        mockMvc.perform(get("/api/v1/stores/user/{userId}", userId))
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }

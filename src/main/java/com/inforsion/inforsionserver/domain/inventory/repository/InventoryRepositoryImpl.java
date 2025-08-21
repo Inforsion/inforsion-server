@@ -59,30 +59,6 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .fetch();
     }
     
-    /**
-     * 특정 재료의 가게별 총 재고량 조회
-     * 
-     * 하나의 재료가 여러 재고 항목으로 나뉘어 저장된 경우,
-     * 해당 가게의 그 재료 총 재고량을 집계합니다.
-     * 상품 제조 가능 수량 계산에 사용됩니다.
-     * 
-     * @param ingredientId 재료 ID
-     * @param storeId 가게 ID
-     * @return 해당 재료의 총 재고량 (없으면 0)
-     */
-    @Override
-    public BigDecimal getTotalQuantityByIngredientAndStore(Integer ingredientId, Integer storeId) {
-        QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
-        
-        BigDecimal totalQuantity = queryFactory
-                .select(inventory.quantity.sum())
-                .from(inventory)
-                .where(inventory.ingredient.id.eq(ingredientId)
-                        .and(inventory.store.id.eq(storeId)))
-                .fetchOne();
-        
-        return totalQuantity != null ? totalQuantity : BigDecimal.ZERO;
-    }
     
     /**
      * 기간별 재고 변동 이력 조회
