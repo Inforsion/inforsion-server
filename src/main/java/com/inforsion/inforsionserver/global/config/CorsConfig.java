@@ -94,15 +94,21 @@ public class CorsConfig {
         // API 경로에만 CORS 적용
         source.registerCorsConfiguration("/api/**", configuration);
         
-        // Swagger UI는 별도 설정 (더 제한적)
+        // Swagger UI는 별도 설정 (개발용으로 관대한 설정)
         CorsConfiguration swaggerConfig = new CorsConfiguration();
-        swaggerConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
-        swaggerConfig.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
+        swaggerConfig.setAllowedOriginPatterns(Arrays.asList("*"));
+        swaggerConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         swaggerConfig.setAllowedHeaders(Arrays.asList("*"));
-        swaggerConfig.setAllowCredentials(false);
+        swaggerConfig.setAllowCredentials(true);
+        swaggerConfig.setMaxAge(3600L);
         
         source.registerCorsConfiguration("/swagger-ui/**", swaggerConfig);
         source.registerCorsConfiguration("/v3/api-docs/**", swaggerConfig);
+        
+        // 개발 환경에서 모든 경로에 대해 관대한 CORS 설정 (Swagger 테스트용)
+        if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
+            source.registerCorsConfiguration("/**", configuration);
+        }
 
         return source;
     }

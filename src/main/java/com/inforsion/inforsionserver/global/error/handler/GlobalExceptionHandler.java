@@ -4,6 +4,7 @@ import com.inforsion.inforsionserver.global.error.code.ErrorCode;
 import com.inforsion.inforsionserver.global.error.dto.ErrorResponse;
 import com.inforsion.inforsionserver.global.error.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import java.io.IOException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -122,6 +126,36 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
         log.error("DataIntegrityViolationException: {}", e.getMessage(), e);
         final ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, "데이터 제약 조건을 위반했습니다.");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * OCR 처리 예외 (TesseractException)
+     */
+    @ExceptionHandler(TesseractException.class)
+    protected ResponseEntity<ErrorResponse> handleTesseractException(TesseractException e) {
+        log.error("TesseractException: {}", e.getMessage(), e);
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, "OCR 처리 중 오류가 발생했습니다. 이미지가 명확하지 않거나 텍스트가 포함되지 않았을 수 있습니다.");
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * 파일 입출력 예외 처리
+     */
+    @ExceptionHandler(IOException.class)
+    protected ResponseEntity<ErrorResponse> handleIOException(IOException e) {
+        log.error("IOException: {}", e.getMessage(), e);
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, "파일을 처리하는 중 오류가 발생했습니다.");
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * 파일 크기 초과 예외 처리
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    protected ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("MaxUploadSizeExceededException: {}", e.getMessage());
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, "업로드 파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
