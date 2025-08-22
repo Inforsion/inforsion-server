@@ -34,6 +34,9 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET}
+      # 네이버 OCR 설정
+      NAVER_OCR_API_URL: ${NAVER_OCR_API_URL}
+      NAVER_OCR_SECRET_KEY: ${NAVER_OCR_SECRET_KEY}
     ports:
       - "8080:8080"
     depends_on:

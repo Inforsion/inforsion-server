@@ -1,7 +1,7 @@
-package com.inforsion.inforsionserver.domain.ocr.controller;
+package com.inforsion.inforsionserver.domain.ocr.tesseract.controller;
 
-import com.inforsion.inforsionserver.domain.ocr.dto.response.OcrResponse;
-import com.inforsion.inforsionserver.domain.ocr.service.OcrService;
+import com.inforsion.inforsionserver.domain.ocr.tesseract.dto.response.OcrResponse;
+import com.inforsion.inforsionserver.domain.ocr.tesseract.service.OcrService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

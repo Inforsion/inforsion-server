@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.ocr.dto.response;
+package com.inforsion.inforsionserver.domain.ocr.tesseract.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
