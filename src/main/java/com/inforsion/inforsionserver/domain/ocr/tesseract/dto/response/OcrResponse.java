@@ -1,3 +1,5 @@
+// Tesseract OCR Response DTO 비활성화 - Naver OCR 사용
+/*
 package com.inforsion.inforsionserver.domain.ocr.tesseract.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,3 +34,4 @@ public class OcrResponse {
     @Schema(description = "이미지 높이 (픽셀)", example = "1080")
     private Integer imageHeight;
 }
+*/

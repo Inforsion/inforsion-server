@@ -12,8 +12,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     # Tesseract OCR 설치
-    tesseract-ocr \
-    tesseract-ocr-kor \
+    # tesseract-ocr \
+    # tesseract-ocr-kor \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/build/libs/*.jar app.jar

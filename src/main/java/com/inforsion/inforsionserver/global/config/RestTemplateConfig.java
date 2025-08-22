@@ -1,3 +1,5 @@
+// RestTemplate 설정 비활성화 - WebClient 사용
+/*
 package com.inforsion.inforsionserver.global.config;
 
 import org.springframework.context.annotation.Bean;
@@ -19,3 +21,4 @@ public class RestTemplateConfig {
         return new RestTemplate(factory);
     }
 }
+*/

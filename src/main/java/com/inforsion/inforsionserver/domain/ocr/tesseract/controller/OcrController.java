@@ -1,26 +1,28 @@
 package com.inforsion.inforsionserver.domain.ocr.tesseract.controller;
 
-import com.inforsion.inforsionserver.domain.ocr.tesseract.dto.response.OcrResponse;
-import com.inforsion.inforsionserver.domain.ocr.tesseract.service.OcrService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+//import com.inforsion.inforsionserver.domain.ocr.tesseract.dto.response.OcrResponse;
+//import com.inforsion.inforsionserver.domain.ocr.tesseract.service.OcrService;
+//import io.swagger.v3.oas.annotations.Operation;
+//import io.swagger.v3.oas.annotations.Parameter;
+//import io.swagger.v3.oas.annotations.media.Content;
+//import io.swagger.v3.oas.annotations.media.Schema;
+//import io.swagger.v3.oas.annotations.responses.ApiResponse;
+//import io.swagger.v3.oas.annotations.responses.ApiResponses;
+//import io.swagger.v3.oas.annotations.tags.Tag;
+//import lombok.RequiredArgsConstructor;
+//import lombok.extern.slf4j.Slf4j;
+//import net.sourceforge.tess4j.TesseractException;
+//import org.springframework.http.MediaType;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.web.bind.annotation.*;
+//import org.springframework.web.multipart.MultipartFile;
+//
+//import java.io.IOException;
+//import java.util.Arrays;
+//import java.util.List;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
+// Tesseract OCR 는 비활성화됨 - Naver OCR 사용
+/*
 @Slf4j
 @Tag(name = "OCR", description = "OCR(광학 문자 인식) API - 이미지에서 텍스트를 추출합니다")
 @RestController
@@ -116,44 +118,45 @@ public class OcrController {
     /**
      * 이미지 파일 유효성 검증
      */
-    private void validateImageFile(MultipartFile file) {
-        // 파일이 비어있는지 확인
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("파일이 업로드되지 않았습니다.");
-        }
-        
-        // 파일명 확인
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.trim().isEmpty()) {
-            throw new IllegalArgumentException("파일명이 유효하지 않습니다.");
-        }
-        
-        // 파일 확장자 확인
-        String extension = getFileExtension(originalFilename);
-        if (!SUPPORTED_EXTENSIONS.contains(extension.toLowerCase())) {
-            throw new IllegalArgumentException(
-                    String.format("지원하지 않는 파일 형식입니다. 지원 형식: %s", 
-                            String.join(", ", SUPPORTED_EXTENSIONS))
-            );
-        }
-        
-        // 파일 크기 확인 (10MB 제한)
-        long maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.getSize() > maxSize) {
-            throw new IllegalArgumentException("파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.");
-        }
-        
-        log.info("파일 검증 통과 - 파일명: {}, 확장자: {}, 크기: {} bytes", 
-                originalFilename, extension, file.getSize());
-    }
-    
-    /**
-     * 파일 확장자 추출
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
-        }
-        return filename.substring(filename.lastIndexOf(".") + 1);
-    }
-}
+//    private void validateImageFile(MultipartFile file) {
+//        // 파일이 비어있는지 확인
+//        if (file == null || file.isEmpty()) {
+//            throw new IllegalArgumentException("파일이 업로드되지 않았습니다.");
+//        }
+//
+//        // 파일명 확인
+//        String originalFilename = file.getOriginalFilename();
+//        if (originalFilename == null || originalFilename.trim().isEmpty()) {
+//            throw new IllegalArgumentException("파일명이 유효하지 않습니다.");
+//        }
+//
+//        // 파일 확장자 확인
+//        String extension = getFileExtension(originalFilename);
+//        if (!SUPPORTED_EXTENSIONS.contains(extension.toLowerCase())) {
+//            throw new IllegalArgumentException(
+//                    String.format("지원하지 않는 파일 형식입니다. 지원 형식: %s",
+//                            String.join(", ", SUPPORTED_EXTENSIONS))
+//            );
+//        }
+//
+//        // 파일 크기 확인 (10MB 제한)
+//        long maxSize = 10 * 1024 * 1024; // 10MB
+//        if (file.getSize() > maxSize) {
+//            throw new IllegalArgumentException("파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.");
+//        }
+//
+//        log.info("파일 검증 통과 - 파일명: {}, 확장자: {}, 크기: {} bytes",
+//                originalFilename, extension, file.getSize());
+//    }
+//
+//    /**
+//     * 파일 확장자 추출
+//     */
+//    private String getFileExtension(String filename) {
+//        if (filename == null || !filename.contains(".")) {
+//            return "";
+//        }
+//        return filename.substring(filename.lastIndexOf(".") + 1);
+//    }
+//}
+//*/
