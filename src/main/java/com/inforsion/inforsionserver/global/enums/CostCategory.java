@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum TransactionCategory {
-    INCOME("수익"),
-    EXPENSE("지출");
+public enum CostCategory {
+    MATERIAL("재료비"),
+    FIXED("고정비"),
+    UTILITY("공과금"),
+    LABOR("인건비");
 
     private final String label;
 }
