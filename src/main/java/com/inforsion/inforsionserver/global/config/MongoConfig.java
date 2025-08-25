@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.config;
+package com.inforsion.inforsionserver.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;

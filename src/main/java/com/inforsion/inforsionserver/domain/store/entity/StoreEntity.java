@@ -32,17 +32,18 @@ public class StoreEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "phone_number", length = 20)
-    private String phoneNumber;
+    // TODO: 추후 필요시 주석 해제
+    // @Column(name = "phone_number", length = 20)
+    // private String phoneNumber;
 
-    @Column(name = "business_registration_number", unique = true, length = 20)
-    private String businessRegistrationNumber;
+    // @Column(name = "business_registration_number", unique = true, length = 20)
+    // private String businessRegistrationNumber;
 
-    @Column(length = 100)
-    private String email;
+    // @Column(length = 100)
+    // private String email;
 
-    @Column(name = "opening_hours", columnDefinition = "JSON")
-    private String openingHours;
+    // @Column(name = "opening_hours", columnDefinition = "JSON")
+    // private String openingHours;
 
     @Column(name = "thumbnail_url", length = 255)
     private String thumbnailUrl;
@@ -75,14 +76,15 @@ public class StoreEntity {
     @OneToMany(mappedBy = "store", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<InventoryEntity> inventories;
 
-    public void update(String name, String location, String description, String phoneNumber, String email, String businessRegistrationNumber, String openingHours, Boolean isActive) {
+    public void update(String name, String location, String description, Boolean isActive) {
         if (name != null) this.name = name;
         if (location != null) this.location = location;
         if (description != null) this.description = description;
-        if (phoneNumber != null) this.phoneNumber = phoneNumber;
-        if (email != null) this.email = email;
-        if (businessRegistrationNumber != null) this.businessRegistrationNumber = businessRegistrationNumber;
-        if (openingHours != null) this.openingHours = openingHours;
+        // TODO: 추후 필요시 주석 해제
+        // if (phoneNumber != null) this.phoneNumber = phoneNumber;
+        // if (email != null) this.email = email;
+        // if (businessRegistrationNumber != null) this.businessRegistrationNumber = businessRegistrationNumber;
+        // if (openingHours != null) this.openingHours = openingHours;
         if (isActive != null) this.isActive = isActive;
     }
 

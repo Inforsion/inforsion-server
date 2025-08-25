@@ -59,10 +59,11 @@ class StoreServiceTest {
                 .name("테스트 가게")
                 .location("서울시 강남구")
                 .description("테스트용 가게입니다")
-                .phoneNumber("010-1234-5678")
-                .email("store@example.com")
-                .businessRegistrationNumber("123-45-67890")
-                .openingHours("{\"mon\": \"09:00-18:00\"}")
+                // TODO: 추후 필요시 주석 해제
+                // .phoneNumber("010-1234-5678")
+                // .email("store@example.com")
+                // .businessRegistrationNumber("123-45-67890")
+                // .openingHours("{\"mon\": \"09:00-18:00\"}")
                 .isActive(true)
                 .user(testUser)
                 .build();
