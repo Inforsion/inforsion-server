@@ -21,12 +21,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
-#파일 업로드 설정
-servlet:
-  multipart:
-    max-file-size: 10MB
-    max-request-size: 50MB
-    enabled: true
+# 파일 업로드 설정
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+      enabled: true
 
 #AWS S3 설정
 cloud:
@@ -40,6 +40,22 @@ cloud:
       secret-key: ${AWS_SECRET_ACCESS_KEY:}
     s3:
       bucket: ${AWS_S3_BUCKET:}
+
+# 네이버 OCR API 설정
+naver:
+  ocr:
+    api-url: ${NAVER_OCR_API_URL:}
+    secret-key: ${NAVER_OCR_SECRET_KEY:}
+
+# MongoDB 설정
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DATABASE:inforsion_ocr_db}
+      username: ${MONGODB_USERNAME:}
+      password: ${MONGODB_PASSWORD:}
+      authentication-database: admin
 
 # 기본 CORS 설정
 cors:
@@ -95,6 +111,21 @@ spring:
 
   jpa:
     show-sql: false
+
+  # MongoDB 설정 (Docker 환경)
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:mongodb}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DATABASE:inforsion_ocr_db}
+      username: ${MONGODB_USERNAME:admin}
+      password: ${MONGODB_PASSWORD:adminpassword}
+      authentication-database: admin
+
+# Docker 환경 CORS 설정 (개발용으로 관대하게)
+cors:
+  allowed-origins: "http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://localhost:19006"
+  allowed-origins-patterns: "http://localhost:*,http://127.0.0.1:*"
 
 # Docker 환경 로깅 설정
 logging:

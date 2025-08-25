@@ -19,25 +19,56 @@ services:
       timeout: 20s
       retries: 10
 
+  mongodb:
+    image: mongo:7.0
+    container_name: inforsion-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpassword
+      MONGO_INITDB_DATABASE: inforsion_ocr_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - inforsion-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      timeout: 20s
+      retries: 10
+
   app:
     build: .
     container_name: inforsion-app
     environment:
+      # MySQL 설정
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: ${DB_NAME}
       DB_USERNAME: inforsion_user
       DB_PASSWORD: inforsion_password
+      # MongoDB 설정
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: inforsion_ocr_db
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: adminpassword
       SPRING_PROFILES_ACTIVE: docker
       # S3 설정
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET}
+      # 네이버 OCR 설정
+      NAVER_OCR_API_URL: ${NAVER_OCR_API_URL}
+      NAVER_OCR_SECRET_KEY: ${NAVER_OCR_SECRET_KEY}
     ports:
       - "8080:8080"
     depends_on:
       mysql:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     networks:
       - inforsion-network
@@ -47,6 +78,7 @@ services:
 
 volumes:
   mysql_data:
+  mongodb_data:
 
 networks:
   inforsion-network:

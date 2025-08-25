@@ -26,7 +26,9 @@ repositories {
 dependencies {
     // Spring Boot Core
     implementation 'org.springframework.boot:spring-boot-starter-web' // REST API, MVC, 내장 Tomcat
+    implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient for reactive HTTP calls
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA, Hibernate ORM
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb' // MongoDB support
     implementation 'org.springframework.boot:spring-boot-starter-validation' // Bean Validation (JSR-303)
     implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security (인증, 인가)
     
@@ -62,6 +64,9 @@ dependencies {
 
     //파일 업로드 처리를 위한 설정
     implementation 'commons-io:commons-io:2.11.0'
+    
+    // Tesseract OCR (비활성화 - Naver OCR 사용)
+    // implementation 'net.sourceforge.tess4j:tess4j:5.8.0'
     
     // Environment Configuration
     implementation 'me.paulschwarz:spring-dotenv:4.0.0' // .env 파일 지원

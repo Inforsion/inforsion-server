@@ -45,14 +45,14 @@ public class CorsConfig {
                 "exp://*",                     // Expo 개발 서버
                 "exp://192.168.*.*:*"          // Expo 로컬 네트워크
             ));
-            configuration.setAllowCredentials(true);
+            configuration.setAllowCredentials(false);
         } else {
             // 운영 환경: 보안을 고려한 제한적 설정
             configuration.setAllowedOrigins(allowedOrigins);
             if (!allowedOriginPatterns.isEmpty()) {
                 configuration.setAllowedOriginPatterns(allowedOriginPatterns);
             }
-            configuration.setAllowCredentials(true);
+            configuration.setAllowCredentials(false);
         }
 
         // React Native에서 사용하는 HTTP 메서드 허용
@@ -94,15 +94,26 @@ public class CorsConfig {
         // API 경로에만 CORS 적용
         source.registerCorsConfiguration("/api/**", configuration);
         
-        // Swagger UI는 별도 설정 (더 제한적)
+        // Swagger UI는 별도 설정 (개발용으로 관대한 설정)
         CorsConfiguration swaggerConfig = new CorsConfiguration();
-        swaggerConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
-        swaggerConfig.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
+        swaggerConfig.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "http://10.0.2.2:*",
+            "http://192.168.*.*:*"
+        ));
+        swaggerConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         swaggerConfig.setAllowedHeaders(Arrays.asList("*"));
         swaggerConfig.setAllowCredentials(false);
+        swaggerConfig.setMaxAge(3600L);
         
         source.registerCorsConfiguration("/swagger-ui/**", swaggerConfig);
         source.registerCorsConfiguration("/v3/api-docs/**", swaggerConfig);
+        
+        // 개발 환경에서 모든 경로에 대해 관대한 CORS 설정 (Swagger 테스트용)
+        if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
+            source.registerCorsConfiguration("/**", configuration);
+        }
 
         return source;
     }
