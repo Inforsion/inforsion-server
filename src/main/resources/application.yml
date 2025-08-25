@@ -112,6 +112,16 @@ spring:
   jpa:
     show-sql: false
 
+  # MongoDB 설정 (Docker 환경)
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:mongodb}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DATABASE:inforsion_ocr_db}
+      username: ${MONGODB_USERNAME:admin}
+      password: ${MONGODB_PASSWORD:adminpassword}
+      authentication-database: admin
+
 # Docker 환경 CORS 설정 (개발용으로 관대하게)
 cors:
   allowed-origins: "http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://localhost:19006"

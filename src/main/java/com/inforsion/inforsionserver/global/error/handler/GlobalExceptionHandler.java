@@ -4,7 +4,6 @@ import com.inforsion.inforsionserver.global.error.code.ErrorCode;
 import com.inforsion.inforsionserver.global.error.dto.ErrorResponse;
 import com.inforsion.inforsionserver.global.error.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -129,15 +128,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * OCR 처리 예외 (TesseractException)
-     */
-    @ExceptionHandler(TesseractException.class)
-    protected ResponseEntity<ErrorResponse> handleTesseractException(TesseractException e) {
-        log.error("TesseractException: {}", e.getMessage(), e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, "OCR 처리 중 오류가 발생했습니다. 이미지가 명확하지 않거나 텍스트가 포함되지 않았을 수 있습니다.");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 
     /**
      * 파일 입출력 예외 처리

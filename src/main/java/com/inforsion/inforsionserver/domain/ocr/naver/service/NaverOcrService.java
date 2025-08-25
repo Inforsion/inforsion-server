@@ -1,7 +1,11 @@
 package com.inforsion.inforsionserver.domain.ocr.naver.service;
 
+import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
+import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrResultEntity;
 import com.inforsion.inforsionserver.domain.ocr.naver.client.NaverOcrClient;
 import com.inforsion.inforsionserver.domain.ocr.naver.dto.response.OcrResponse;
+import com.inforsion.inforsionserver.domain.ocr.mongo.repository.OcrResultRepository;
+import com.inforsion.inforsionserver.domain.ocr.service.ReceiptAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,8 @@ import java.util.stream.Collectors;
 public class NaverOcrService {
 
     private final NaverOcrClient naverOcrClient;
+    private final OcrResultRepository ocrResultRepository;
+    private final ReceiptAnalysisService receiptAnalysisService;
 
     public OcrResponse processImage(MultipartFile file) throws IOException {
         long startTime = System.currentTimeMillis();
@@ -39,10 +45,29 @@ public class NaverOcrService {
             
             long processingTime = System.currentTimeMillis() - startTime;
             
-            log.info("네이버 OCR 처리 완료 - 소요시간: {}ms, 추출된 줄 수: {}", processingTime, extractedLines.size());
+            // 영수증 항목 분석
+            List<ReceiptItem> receiptItems = receiptAnalysisService.extractReceiptItems(extractedLines);
+            
+            log.info("네이버 OCR 처리 완료 - 소요시간: {}ms, 추출된 줄 수: {}, 상품 수: {}", 
+                    processingTime, extractedLines.size(), receiptItems.size());
             
             // 콘솔에 OCR 결과 출력
-            printOcrResult(file, extractedText, extractedLines, processingTime);
+            printOcrResult(file, extractedText, extractedLines, receiptItems, processingTime);
+            
+            // MongoDB에 OCR 결과 저장
+            OcrResultEntity ocrResult = OcrResultEntity.builder()
+                    .originalFileName(file.getOriginalFilename())
+                    .extractedText(extractedText)
+                    .extractedLines(extractedLines)
+                    .receiptItems(receiptItems)
+                    .processingTimeMs(processingTime)
+                    .fileSizeBytes(file.getSize())
+                    .ocrEngine("Naver OCR WebClient")
+                    .confidence(1.0)
+                    .build();
+            
+            OcrResultEntity savedResult = ocrResultRepository.save(ocrResult);
+            log.info("OCR 결과 MongoDB 저장 완료 - ID: {}", savedResult.getId());
             
             return OcrResponse.builder()
                     .originalFileName(file.getOriginalFilename())
@@ -63,7 +88,7 @@ public class NaverOcrService {
     }
     
     private void printOcrResult(MultipartFile file, String extractedText, List<String> extractedLines, 
-                               long processingTime) {
+                               List<ReceiptItem> receiptItems, long processingTime) {
         System.out.println("=== 네이버 OCR 처리 결과 (WebClient) ===");
         System.out.println("파일명: " + file.getOriginalFilename());
         System.out.println("파일 크기: " + file.getSize() + " bytes");
@@ -73,6 +98,20 @@ public class NaverOcrService {
         System.out.println("--- 줄별 텍스트 ---");
         for (int i = 0; i < extractedLines.size(); i++) {
             System.out.println((i + 1) + ": " + extractedLines.get(i));
+        }
+        System.out.println("--- 영수증 상품 분석 결과 ---");
+        if (receiptItems.isEmpty()) {
+            System.out.println("상품 정보를 찾을 수 없습니다.");
+        } else {
+            for (int i = 0; i < receiptItems.size(); i++) {
+                ReceiptItem item = receiptItems.get(i);
+                System.out.printf("%d. %s | 수량: %s개 | 단가: %s원 | 총액: %s원%n",
+                        i + 1,
+                        item.getProductName(),
+                        item.getQuantity() != null ? item.getQuantity() : "?",
+                        item.getUnitPrice() != null ? String.format("%,d", item.getUnitPrice()) : "?",
+                        item.getTotalPrice() != null ? String.format("%,d", item.getTotalPrice()) : "?");
+            }
         }
         System.out.println("==============================");
     }
