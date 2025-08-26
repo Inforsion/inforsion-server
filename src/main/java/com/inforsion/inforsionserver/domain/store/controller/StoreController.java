@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,19 +27,19 @@ public class StoreController {
 
     private final StoreService storeService;
 
-    @Operation(summary = "가게 생성", description = "특정 사용자에 대한 새로운 가게를 생성합니다.")
-    // TODO: userId는 추후 Spring Security의 @AuthenticationPrincipal 등을 통해 직접 받아오도록 수정해야 합니다.
-    @PostMapping("/{userId}")
-    public ResponseEntity<StoreDto.Response> createStore(
-            @PathVariable Integer userId,
-            @RequestBody StoreDto.CreateRequest request) {
+    @Operation(summary = "가게 생성", description = "현재 로그인한 사용자의 새로운 가게를 생성합니다.")
+    @PostMapping
+    public ResponseEntity<StoreDto.Response> createStore(@RequestBody StoreDto.CreateRequest request) {
+        // TODO: JWT에서 사용자 ID 추출하도록 수정 예정
+        Integer userId = 1; // 임시로 하드코딩
+        
         StoreDto.Response response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @Operation(
-            summary = "사용자별 가게 목록 조회", 
-            description = "특정 사용자가 소유한 모든 가게 목록을 조회합니다. isActive 파라미터로 활성 상태를 필터링할 수 있습니다."
+            summary = "내 가게 목록 조회", 
+            description = "현재 로그인한 사용자가 소유한 모든 가게 목록을 조회합니다. isActive 파라미터로 활성 상태를 필터링할 수 있습니다."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -52,12 +53,13 @@ public class StoreController {
                     content = @Content
             )
     })
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<StoreDto.Response>> getStoresByUserId(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @PathVariable Integer userId,
+    @GetMapping("/my")
+    public ResponseEntity<List<StoreDto.Response>> getMyStores(
             @Parameter(description = "활성 상태 필터 (true: 활성, false: 비활성, null: 전체)", example = "true")
             @RequestParam(required = false) Boolean isActive) {
+        
+        // TODO: JWT에서 사용자 ID 추출하도록 수정 예정
+        Integer userId = 1; // 임시로 하드코딩
         
         List<StoreDto.Response> responses;
         if (isActive != null) {
@@ -118,7 +120,7 @@ public class StoreController {
                     content = @Content
             )
     })
-    @PostMapping("/{storeId}/thumbnail")
+    @PostMapping(value = "/{storeId}/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreDto.Response> uploadStoreThumbnail(
             @Parameter(description = "가게 ID", required = true, example = "1")
             @PathVariable Integer storeId,

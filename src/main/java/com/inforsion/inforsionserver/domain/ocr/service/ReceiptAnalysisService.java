@@ -2,6 +2,7 @@ package com.inforsion.inforsionserver.domain.ocr.service;
 
 import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class ReceiptAnalysisService {
     private static final Pattern PRICE_PATTERN = Pattern.compile("([0-9,]+)원?");
     private static final Pattern QUANTITY_PATTERN = Pattern.compile("(\\d+)개|x(\\d+)|\\*(\\d+)|(\\d+)EA|(\\d+)ea");
     
+    @Cacheable(value = "receiptAnalysis", key = "#extractedLines.hashCode()")
     public List<ReceiptItem> extractReceiptItems(List<String> extractedLines) {
         List<ReceiptItem> items = new ArrayList<>();
         

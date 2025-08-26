@@ -35,10 +35,11 @@ public class StoreService {
                 .name(request.getName())
                 .location(request.getLocation())
                 .description(request.getDescription())
-                .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
-                .businessRegistrationNumber(request.getBusinessRegistrationNumber())
-                .openingHours(request.getOpeningHours())
+                // TODO: 추후 필요시 주석 해제
+                // .phoneNumber(request.getPhoneNumber())
+                // .email(request.getEmail())
+                // .businessRegistrationNumber(request.getBusinessRegistrationNumber())
+                // .openingHours(request.getOpeningHours())
                 .user(user)
                 .build();
 
@@ -100,10 +101,11 @@ public class StoreService {
                 request.getName(),
                 request.getLocation(),
                 request.getDescription(),
-                request.getPhoneNumber(),
-                request.getEmail(),
-                request.getBusinessRegistrationNumber(),
-                request.getOpeningHours(),
+                // TODO: 추후 필요시 주석 해제
+                // request.getPhoneNumber(),
+                // request.getEmail(),
+                // request.getBusinessRegistrationNumber(),
+                // request.getOpeningHours(),
                 request.getIsActive()
         );
 
@@ -135,14 +137,14 @@ public class StoreService {
      * 기존 이미지가 있는 경우 새 이미지로 교체됩니다.
      * 
      * @param storeId 가게 ID
-     * @param image 업로드할 이미지 파일
+     * @param file 업로드할 이미지 파일
      * @return 업데이트된 가게 정보 DTO
      * @throws StoreNotFoundException 가게가 존재하지 않는 경우
      * @throws IllegalArgumentException 파일이 유효하지 않은 경우
      * @throws RuntimeException S3 업로드 실패 시
      */
     @Transactional
-    public StoreDto.Response uploadStoreThumbnail(Integer storeId, MultipartFile image) {
+    public StoreDto.Response uploadStoreThumbnail(Integer storeId, MultipartFile file) {
         StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
 
         // TODO: 사용자 권한 확인 로직 추가 필요
@@ -157,11 +159,11 @@ public class StoreService {
         }
 
         // S3에 새 이미지 업로드
-        String imageUrl = s3FileUploadService.uploadImageFile(image, S3_DIRECTORY);
+        String imageUrl = s3FileUploadService.uploadImageFile(file, S3_DIRECTORY);
         String s3Key = s3FileUploadService.getS3KeyFromUrl(imageUrl);
         
         // 가게 엔티티에 이미지 정보 저장
-        store.updateThumbnailMetadata(imageUrl, image.getOriginalFilename(), s3Key);
+        store.updateThumbnailMetadata(imageUrl, file.getOriginalFilename(), s3Key);
 
         return StoreDto.Response.from(store);
     }
