@@ -85,18 +85,18 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
     public List<StoreSalesFinancialDto> findStoreSalesFinancial(
             TransactionConditionDto condition, PeriodType periodType
     ) {
-        LocalDate start = condition.getStartDate();
-        LocalDate end = condition.getEndDate();
+        LocalDate start = condition.getStartDate(); // 시작 날짜
+        LocalDate end = condition.getEndDate(); // 마지막 날짜
 
         LocalDateTime startDateTime = (start != null) ? start.atStartOfDay() : null;
         LocalDateTime endDateTime = (end != null) ? end.atTime(23, 59, 59) : null;
 
         BooleanBuilder builder = new BooleanBuilder();
-        if (condition.getStoreId() != null) {
+        if (condition.getStoreId() != null) { // 조건이 참이면 getStoreId 를 가져온다.
             builder.and(t.store.id.eq(condition.getStoreId()));
         }
         if (condition.getStoreName() != null && !condition.getStoreName().isBlank()) {
-            builder.and(t.store.name.eq(condition.getStoreName()));
+            builder.and(t.store.name.eq(condition.getStoreName())); // 조건이 참이면 가게 이름을 가져온다.
         }
         if (startDateTime != null && endDateTime != null) {
             builder.and(t.date.between(startDateTime, endDateTime));
@@ -108,21 +108,24 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
 
         String pattern;
 
-        switch (periodType) {
+        switch (periodType) { // 기간 타입 별 정리
             case MONTH: pattern = "%Y-%m"; break;
             case YEAR:  pattern = "%Y"; break;
-            case DAY:
+            case DAY: pattern = "%d"; break;
             default:    pattern = "%Y-%m-%d"; break;
         }
+
+
+        // expression => queryDSL의 표현식
         var periodExpr = Expressions.stringTemplate("DATE_FORMAT({0}, '" + pattern + "')", t.date);
 
         // 총매출 (SALE)
-        var grossExpr = Expressions.numberTemplate(BigDecimal.class,
+        var grossExpr = Expressions.numberTemplate(BigDecimal.class, // 거래 유형이 income이라면 sale
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
                 t.type.stringValue(), Expressions.constant("SALE"), t.amount);
 
         // 환불
-        var refundExpr = Expressions.numberTemplate(BigDecimal.class,
+        var refundExpr = Expressions.numberTemplate(BigDecimal.class, // 
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
                 t.type.stringValue(), Expressions.constant("REFUND"), t.amount);
 

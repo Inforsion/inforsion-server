@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,4 +16,6 @@ public interface InventoryRepositoryCustom {
     List<InventoryEntity> findInventoryByStoreAndDateRange(Integer storeId, LocalDateTime startDate, LocalDateTime endDate);
     
     Long countExpiredInventoryByStoreId(Integer storeId);
+
+    Page<InventoryEntity> findAllInventories();
 }
