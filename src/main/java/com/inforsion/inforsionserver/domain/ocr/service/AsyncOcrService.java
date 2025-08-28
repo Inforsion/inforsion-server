@@ -5,6 +5,8 @@ import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobStatus;
 import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
 import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrResultEntity;
 import com.inforsion.inforsionserver.domain.ocr.mongo.repository.OcrResultRepository;
+import com.inforsion.inforsionserver.domain.ocr.mysql.entity.ReceiptProductEntity;
+import com.inforsion.inforsionserver.domain.ocr.mysql.service.ReceiptProductService;
 import com.inforsion.inforsionserver.domain.ocr.naver.client.NaverOcrClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class AsyncOcrService {
     private final NaverOcrClient naverOcrClient;
     private final OcrResultRepository ocrResultRepository;
     private final ReceiptAnalysisService receiptAnalysisService;
+    private final ReceiptProductService receiptProductService;
     
     // 메모리 기반 작업 상태 캐시 (운영환경에서는 Redis 권장)
     private final Map<String, OcrJobResult> jobCache = new ConcurrentHashMap<>();
@@ -51,10 +54,19 @@ public class AsyncOcrService {
             OcrJobResult processingResult = OcrJobResult.processing(jobId, originalFileName);
             jobCache.put(jobId, processingResult);
 
-            // 3. 네이버 OCR API 호출 (병렬 처리 가능한 부분)
+            // 3. 파일 데이터를 미리 읽어서 저장 (동기적으로 처리)
+            byte[] fileBytes;
+            try {
+                fileBytes = file.getBytes();
+            } catch (Exception e) {
+                log.error("파일 데이터 읽기 실패 - JobId: {}, 오류: {}", jobId, e.getMessage());
+                throw new RuntimeException("파일 데이터 읽기 실패", e);
+            }
+            
+            // 네이버 OCR API 호출 (병렬 처리 가능한 부분)
             CompletableFuture<String> ocrFuture = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return naverOcrClient.parseText(file.getBytes(), file.getOriginalFilename());
+                    return naverOcrClient.parseText(fileBytes, file.getOriginalFilename());
                 } catch (Exception e) {
                     log.error("네이버 OCR API 호출 실패 - JobId: {}, 오류: {}", jobId, e.getMessage());
                     throw new RuntimeException("OCR API 호출 실패", e);
@@ -75,8 +87,8 @@ public class AsyncOcrService {
             List<ReceiptItem> receiptItems = receiptFuture.get();
             long processingTime = System.currentTimeMillis() - startTime;
 
-            // 5. MongoDB에 결과 저장 (비동기)
-            CompletableFuture<OcrResultEntity> saveFuture = CompletableFuture.supplyAsync(() -> {
+            // 5. 병렬로 MongoDB와 MySQL에 결과 저장
+            CompletableFuture<OcrResultEntity> mongoSaveFuture = CompletableFuture.supplyAsync(() -> {
                 OcrResultEntity ocrResult = OcrResultEntity.builder()
                         .originalFileName(originalFileName)
                         .extractedText(extractedText)
@@ -90,9 +102,20 @@ public class AsyncOcrService {
 
                 return ocrResultRepository.save(ocrResult);
             });
+            
+            // MySQL에 제품명 저장 (비동기)
+            CompletableFuture<List<ReceiptProductEntity>> mysqlSaveFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return receiptProductService.saveReceiptProducts(receiptItems, jobId);
+                } catch (Exception e) {
+                    log.error("MySQL에 제품명 저장 실패 - JobId: {}, 오류: {}", jobId, e.getMessage());
+                    return List.of();
+                }
+            });
 
-            // 6. 완료 상태로 업데이트
-            OcrResultEntity savedResult = saveFuture.get();
+            // 6. 모든 저장 작업 대기 및 완료 상태로 업데이트
+            OcrResultEntity savedMongoResult = mongoSaveFuture.get();
+            List<ReceiptProductEntity> savedMysqlResults = mysqlSaveFuture.get();
             OcrJobResult completedResult = OcrJobResult.completed(
                     jobId, originalFileName, extractedText, extractedLines, receiptItems,
                     "Naver OCR Async", 1.0, processingTime, file.getSize()
@@ -100,8 +123,8 @@ public class AsyncOcrService {
             
             jobCache.put(jobId, completedResult);
 
-            log.info("비동기 OCR 작업 완료 - JobId: {}, 처리시간: {}ms, 상품수: {}", 
-                    jobId, processingTime, receiptItems.size());
+            log.info("비동기 OCR 작업 완료 - JobId: {}, 처리시간: {}ms, 상품수: {}, MySQL저장: {}개", 
+                    jobId, processingTime, receiptItems.size(), savedMysqlResults.size());
 
             return CompletableFuture.completedFuture(completedResult);
 
