@@ -139,6 +139,54 @@ logging:
     name: /app/logs/application.log
 
 ---
+# RDS 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: rds
+
+  datasource:
+    url: jdbc:mysql://inforsion-rds.c70uuq2mcwbq.ap-southeast-2.rds.amazonaws.com:3306/${DB_NAME:inforsion_db}?useSSL=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # MongoDB 설정 (기존 유지)
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:mongodb}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DATABASE:inforsion_ocr_db}
+      username: ${MONGODB_USERNAME:admin}
+      password: ${MONGODB_PASSWORD:adminpassword}
+      authentication-database: admin
+
+# RDS 환경 CORS 설정
+cors:
+  allowed-origins: "http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://localhost:19006"
+  allowed-origins-patterns: "http://localhost:*,http://127.0.0.1:*"
+
+# RDS 환경 로깅 설정
+logging:
+  level:
+    com.inforsion.inforsionserver: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSSZ} %5p %t --- [%15.15t] %-40.40logger{39} : %m%n"
+  file:
+    name: /app/logs/application.log
+
+---
 # 운영 환경 설정
 spring:
   config:
