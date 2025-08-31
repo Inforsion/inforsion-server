@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.transaction.dto;
+package com.inforsion.inforsionserver.domain.transaction.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

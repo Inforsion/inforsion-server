@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.transaction.dto;
+package com.inforsion.inforsionserver.domain.transaction.dto.request;
 
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,4 +18,6 @@ public class TransactionConditionDto {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate; // 마지막 날짜
 
+
+    private LocalDate periodType;
 }

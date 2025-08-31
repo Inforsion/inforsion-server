@@ -16,11 +16,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class TransactionRequestDto {
-    private Integer storeId; // 가게 아이디
+    private Integer storeId; // 가게 id
     private String name; // 거래 이름
     private LocalDateTime date; // 거래 날짜
     private BigDecimal amount; // 거래 금액
     private TransactionType type; // 거래 유형
-    private PaymentMethod paymentMethod;
-    private CostCategory costCategory;
+    private PaymentMethod paymentMethod; // 수익, 지출
+    private CostCategory costCategory; // 원가 관련 카테고리
 }

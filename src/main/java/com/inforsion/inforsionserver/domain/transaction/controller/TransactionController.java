@@ -1,8 +1,11 @@
 package com.inforsion.inforsionserver.domain.transaction.controller;
 
+import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesFinancialDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionRequestDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponseDto;
 import com.inforsion.inforsionserver.domain.transaction.service.TransactionService;
+import com.inforsion.inforsionserver.global.enums.PeriodType;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -107,5 +110,23 @@ public class TransactionController {
     ) {
         transactionService.deleteTransaction(transId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "매출 계산",
+            description = "매출을 확인할 수 있습니다.."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "거래 삭제 성공"),
+            @ApiResponse(responseCode = "404", description = "거래를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/financials")
+    public ResponseEntity<List<StoreSalesFinancialDto>> getStoreFinancials(
+            @ModelAttribute TransactionConditionDto condition,
+            @RequestParam PeriodType periodType
+            ){
+        List<StoreSalesFinancialDto> result = transactionService.getStoreFinancials(condition, periodType);
+        return ResponseEntity.ok(result);
     }
 }

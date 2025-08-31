@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Integer>,
         TransactionRepositoryCustom {
+    List<TransactionEntity> findAllByOrderId(Integer orderId);
 }
