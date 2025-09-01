@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "inventories")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -19,27 +20,41 @@ public class InventoryEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ingredient_id")
     private Integer id;
 
-    @Column(nullable = false, length = 100)
-    private String name; // 재고 아이템 이름 (원두, 우유, 설탕 등)
+    @Column(name = "ingredient_name", nullable = false, length = 100)
+    private String name; // 재료명
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal quantity;
+    @Column(nullable = false, precision = 10)
+    private BigDecimal currentStock; // 현재 재료량
+
+    @Column(name = "min_stock_level")
+    private BigDecimal minStock; // 최대 재고 수준
+
+    @Column(name = "max_stock_level")
+    private BigDecimal maxStock; // 최소 재고 수준
 
     @Column(nullable = false, length = 20)
     private String unit; // 단위 (g, ml, 개 등)
 
+    @Column(name = "unit_cost", nullable = false, length = 20)
+    private BigDecimal unitCost; // 단위 당 가격
+
     @Column(name = "expiry_date")
-    private LocalDateTime expiryDate;
+    private LocalDateTime expiryDate; // 유통기한
+
+    @UpdateTimestamp
+    @Column(name = "last_restocked_date", nullable = false)
+    private LocalDateTime lastRestockedDate; // 마지막 입고일
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt; // 생성일
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt; // 수정일
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)

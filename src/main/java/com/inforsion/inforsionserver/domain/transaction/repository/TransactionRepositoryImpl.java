@@ -1,7 +1,7 @@
 package com.inforsion.inforsionserver.domain.transaction.repository;
 
-import com.inforsion.inforsionserver.domain.transaction.dto.StoreSalesFinancialDto;
-import com.inforsion.inforsionserver.domain.transaction.dto.TransactionConditionDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesFinancialDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionRequestDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponseDto;
 import com.inforsion.inforsionserver.domain.transaction.entity.QTransactionEntity;
@@ -21,16 +21,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-////////////////////// DAO /////////////////////////
+/**
+ * DAO
+ */
 @Repository
 @RequiredArgsConstructor
 public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
-    private final JPAQueryFactory queryFactory;
 
-    // queryDSL에서 기본 제공하는 static instance
+    private final JPAQueryFactory queryFactory;
     private final QTransactionEntity t = QTransactionEntity.transactionEntity;
 
-    // 거래 조회
+    /**
+     * 매출/재무 조회
+     */
     @Override
     public List<TransactionResponseDto> findByStoreIdDateRange(
             Integer storeId,
@@ -58,7 +61,9 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .fetch();
     }
 
-    // 거래 수정
+    /**
+     * 거래 수정
+     */
     @Override
     public Long updateTransaction(Integer transactionId, TransactionRequestDto requestDto){
        return queryFactory
@@ -71,7 +76,9 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .execute();
     }
 
-    // 거래 삭제
+    /**
+     * 거래 삭제
+     */
     @Override
     public Long deleteTransaction(Integer transactionId) {
         return queryFactory
@@ -80,13 +87,15 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .execute();
     }
 
-    // 매출 계산
+    /**
+     * 매출 계산 로직
+     */
     @Override
-    public List<StoreSalesFinancialDto> findStoreSalesFinancial(
+    public List<StoreSalesFinancialDto> getStoreFinancials(
             TransactionConditionDto condition, PeriodType periodType
     ) {
-        LocalDate start = condition.getStartDate();
-        LocalDate end = condition.getEndDate();
+        LocalDate start = condition.getStartDate(); // 시작 날짜
+        LocalDate end = condition.getEndDate(); // 마지막 날짜
 
         LocalDateTime startDateTime = (start != null) ? start.atStartOfDay() : null;
         LocalDateTime endDateTime = (end != null) ? end.atTime(23, 59, 59) : null;
@@ -108,12 +117,13 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
 
         String pattern;
 
-        switch (periodType) {
+        switch (periodType) { // 기간 타입 별 정리
             case MONTH: pattern = "%Y-%m"; break;
             case YEAR:  pattern = "%Y"; break;
-            case DAY:
+            case DAY:   pattern = "%d"; break;
             default:    pattern = "%Y-%m-%d"; break;
         }
+
         var periodExpr = Expressions.stringTemplate("DATE_FORMAT({0}, '" + pattern + "')", t.date);
 
         // 총매출 (SALE)
@@ -192,7 +202,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                         StoreSalesFinancialDto.class,
                         t.store.id,            // storeId
                         t.store.name,          // storeName
-                        periodExpr,            // period (String)
+                        periodExpr,            // period
                         cardExpr,              // cardAmount
                         cashExpr,              // cashAmount
                         otherSalesExpr,        // otherAmount
@@ -229,6 +239,5 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
         }
         return null;
     }
-
 
 }

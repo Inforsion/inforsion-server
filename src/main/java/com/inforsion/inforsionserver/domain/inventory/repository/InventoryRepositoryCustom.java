@@ -1,18 +1,19 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 public interface InventoryRepositoryCustom {
-    
-    List<InventoryEntity> findLowStockItems(Integer storeId, BigDecimal threshold);
-    
-    List<InventoryEntity> findExpiringItems(Integer storeId, LocalDateTime beforeDate);
-    
-    List<InventoryEntity> findInventoryByStoreAndDateRange(Integer storeId, LocalDateTime startDate, LocalDateTime endDate);
-    
-    Long countExpiredInventoryByStoreId(Integer storeId);
+    public Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable);
+    public Long updateInventory(Integer inventoryId, InventoryDto inventoryDto);
+    public Long deleteInventory(Integer inventoryId);
 }

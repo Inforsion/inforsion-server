@@ -10,10 +10,5 @@ import java.util.List;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<InventoryEntity, Integer>, QuerydslPredicateExecutor<InventoryEntity>, InventoryRepositoryCustom {
-    
-    List<InventoryEntity> findByStoreId(Integer storeId);
-    
-    List<InventoryEntity> findByExpiryDateBefore(LocalDateTime expiryDate);
-    
-    List<InventoryEntity> findByStoreIdAndExpiryDateBefore(Integer storeId, LocalDateTime expiryDate);
+
 }

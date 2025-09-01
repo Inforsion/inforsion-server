@@ -1,108 +1,93 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+@Repository
 @RequiredArgsConstructor
 public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     
     private final JPAQueryFactory queryFactory;
-    
-    /**
-     * 재고 부족 항목 조회
-     * 
-     * 특정 가게에서 재고량이 임계값 이하인 재고 항목들을 조회합니다.
-     * 재고 부족 알림 시스템이나 자동 발주 시스템에서 사용됩니다.
-     * 
-     * @param storeId 가게 ID
-     * @param threshold 재고 부족 임계값
-     * @return 재고가 부족한 항목 목록
-     */
+    private final QInventoryEntity t = QInventoryEntity.inventoryEntity;
+
+    // 전체 재고 조회 - 페이징 처리: 이름, 현재 재료량, 유통기한, 최근 입고 순 정렬 가능
     @Override
-    public List<InventoryEntity> findLowStockItems(Integer storeId, BigDecimal threshold) {
+    public Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable) {
         QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
-        
-        return queryFactory
+
+        List<OrderSpecifier<?>> orders = getOrderSpecifiers(pageable, inventory);
+
+        List<InventoryEntity> content = queryFactory
                 .selectFrom(inventory)
-                .where(inventory.store.id.eq(storeId)
-                        .and(inventory.quantity.loe(threshold)))
+                .where(inventory.store.id.eq(storeId))
+                .orderBy(orders.toArray(OrderSpecifier[]::new))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
+
+        Long total = Optional.ofNullable(
+                queryFactory.select(inventory.count())
+                        .from(inventory)
+                        .where(inventory.store.id.eq(storeId))
+                        .fetchOne()
+        ).orElse(0L);
+        return new PageImpl<>(content, pageable, total);
     }
-    
-    /**
-     * 유통기한 임박 항목 조회
-     * 
-     * 특정 가게에서 지정된 날짜 이전에 유통기한이 만료되는 재고 항목들을 조회합니다.
-     * 유통기한 빠른 순으로 정렬하여 우선순위를 명확히 합니다.
-     * 폐기 방지 및 할인 판매 계획에 사용됩니다.
-     * 
-     * @param storeId 가게 ID
-     * @param beforeDate 기준 날짜 (이 날짜 이전에 만료되는 항목들)
-     * @return 유통기한이 임박한 항목 목록 (유통기한 오름차순)
-     */
-    @Override
-    public List<InventoryEntity> findExpiringItems(Integer storeId, LocalDateTime beforeDate) {
-        QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
-        
-        return queryFactory
-                .selectFrom(inventory)
-                .where(inventory.store.id.eq(storeId)
-                        .and(inventory.expiryDate.isNotNull())
-                        .and(inventory.expiryDate.before(beforeDate)))
-                .orderBy(inventory.expiryDate.asc())
-                .fetch();
+
+    // 동적 정렬
+    public List<OrderSpecifier<?>> getOrderSpecifiers(Pageable pageable, QInventoryEntity inventory){
+        return pageable.getSort().stream()
+                .map(order -> {
+                    Order direction = order.isAscending() ? Order.ASC:Order.DESC;
+                    switch (order.getProperty()){
+                        case "name":
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.name);
+                        case "currentStock":
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.currentStock);
+                        case "expiryDate":
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.expiryDate);
+                        case "lastRestockedDate":
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.lastRestockedDate);
+                        default:
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.id);
+                    }
+                })
+                .toList();
     }
-    
-    
-    /**
-     * 기간별 재고 변동 이력 조회
-     * 
-     * 특정 가게의 지정된 기간 동안 업데이트된 재고 항목들을 조회합니다.
-     * 최신 업데이트 순으로 정렬하여 최근 변동사항을 우선 확인할 수 있습니다.
-     * 재고 관리 이력 추적이나 감사에 사용됩니다.
-     * 
-     * @param storeId 가게 ID
-     * @param startDate 조회 시작 날짜
-     * @param endDate 조회 종료 날짜
-     * @return 기간 내 업데이트된 재고 항목 목록 (업데이트 시간 내림차순)
-     */
+
+    // 재고 수정
     @Override
-    public List<InventoryEntity> findInventoryByStoreAndDateRange(Integer storeId, LocalDateTime startDate, LocalDateTime endDate) {
-        QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
-        
+    public Long updateInventory(Integer inventoryId, InventoryDto inventoryDto){
         return queryFactory
-                .selectFrom(inventory)
-                .where(inventory.store.id.eq(storeId)
-                        .and(inventory.updatedAt.between(startDate, endDate)))
-                .orderBy(inventory.updatedAt.desc())
-                .fetch();
+                .update(t)
+                .set(t.name, inventoryDto.getName())
+                .set(t.currentStock, inventoryDto.getCurrentStock())
+                .set(t.unit, inventoryDto.getUnit())
+                .set(t.unitCost, inventoryDto.getUnitCost())
+                .set(t.expiryDate, inventoryDto.getExpiryDate())
+                .set(t.lastRestockedDate, inventoryDto.getLastRestockedDate())
+                .where(t.id.eq(inventoryId)) // 특정 행만 수정
+                .execute();
     }
-    
-    /**
-     * 특정 가게의 만료된 재고 개수 조회
-     * 
-     * 현재 시점을 기준으로 이미 유통기한이 지난 재고 항목의 개수를 집계합니다.
-     * 폐기해야 할 재고량 파악이나 손실 분석에 사용됩니다.
-     * 
-     * @param storeId 가게 ID
-     * @return 만료된 재고 항목 개수
-     */
+
+    // 재고 삭제
     @Override
-    public Long countExpiredInventoryByStoreId(Integer storeId) {
-        QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
-        
+    public Long deleteInventory(Integer inventoryId) {
         return queryFactory
-                .select(inventory.count())
-                .from(inventory)
-                .where(inventory.store.id.eq(storeId)
-                        .and(inventory.expiryDate.isNotNull())
-                        .and(inventory.expiryDate.before(LocalDateTime.now())))
-                .fetchOne();
+                .delete(t)
+                .where(t.id.eq(inventoryId))
+                .execute();
     }
 }

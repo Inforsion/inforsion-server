@@ -1,13 +1,13 @@
 package com.inforsion.inforsionserver.domain.transaction.repository;
 
-import com.inforsion.inforsionserver.domain.transaction.dto.StoreSalesFinancialDto;
-import com.inforsion.inforsionserver.domain.transaction.dto.TransactionConditionDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesFinancialDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionRequestDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponseDto;
+import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity;
 import com.inforsion.inforsionserver.global.enums.PeriodType;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,7 +27,8 @@ public interface TransactionRepositoryCustom {
     Long deleteTransaction(Integer transactionId);
 
     // 매출 관리
-    List<StoreSalesFinancialDto> findStoreSalesFinancial(
+    List<StoreSalesFinancialDto> getStoreFinancials(
             TransactionConditionDto condition, PeriodType periodType
     );
+
 }

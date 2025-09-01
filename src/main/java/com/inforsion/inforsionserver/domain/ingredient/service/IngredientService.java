@@ -72,6 +72,7 @@ public class IngredientService {
      * @return 재료 상세 정보 DTO
      * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
      */
+    @Transactional
     public IngredientResponse getIngredient(Integer ingredientId) {
         IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
                 .orElseThrow(IngredientNotFoundException::new);

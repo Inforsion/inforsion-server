@@ -1,8 +1,8 @@
 package com.inforsion.inforsionserver.domain.transaction.service;
 
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
-import com.inforsion.inforsionserver.domain.transaction.dto.StoreSalesFinancialDto;
-import com.inforsion.inforsionserver.domain.transaction.dto.TransactionConditionDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesFinancialDto;
+import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionRequestDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponseDto;
 import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity;
@@ -13,7 +13,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,7 +23,9 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final StoreRepository storeRepository;
 
-    // 거래 생성
+    /**
+     * 거래 생성
+     */
     @Transactional
     public TransactionResponseDto createTransaction(TransactionRequestDto requestDto) {
         var store = storeRepository.findById(requestDto.getStoreId())
@@ -42,18 +43,13 @@ public class TransactionService {
 
         TransactionEntity saved = transactionRepository.save(entity);
 
-        return new TransactionResponseDto(
-                saved.getId(),
-                saved.getStore().getId(),
-                saved.getStore().getName(),
-                saved.getDate(),
-                saved.getAmount(),
-                saved.getType()
-        );
+        return toResponseDto(saved);
     }
 
 
-    // 거래 조회
+    /**
+     * 거래 조회
+     */
     public List<TransactionResponseDto> getTransaction(
             Integer storeId,
             TransactionType transactionType,
@@ -63,8 +59,29 @@ public class TransactionService {
         return transactionRepository.findByStoreIdDateRange(storeId, transactionType, startDate, endDate);
     }
 
+    /**
+     * 거래 수정
+     */
+    @Transactional
+    public TransactionResponseDto updateTransaction(Integer id, TransactionRequestDto requestDto) {
+        TransactionEntity entity = transactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("거래 내역을 찾을 수 없습니다." + id));
 
-    // 거래 삭제
+        entity.setName(requestDto.getName());
+        entity.setDate(requestDto.getDate());
+        entity.setAmount(requestDto.getAmount());
+        entity.setType(requestDto.getType());
+        entity.setPaymentMethod(requestDto.getPaymentMethod());
+        entity.setCostCategory(requestDto.getCostCategory());
+
+        TransactionEntity updated = transactionRepository.save(entity);
+        return toResponseDto(updated);
+
+    }
+
+    /**
+     * 거래 삭제
+     */
     @Transactional
     public void deleteTransaction(Integer transactionId) {
         if (!transactionRepository.existsById(transactionId)) {
@@ -73,19 +90,23 @@ public class TransactionService {
         transactionRepository.deleteById(transactionId);
     }
 
-    // 거래 수정
+    /**
+     * 매출 조회
+     * 기간을 받아 기간 내의 매출을 조회합니다.
+     */
     @Transactional
-    public TransactionResponseDto updateTransaction(Integer id, TransactionRequestDto requestDto) {
-        Long updated = transactionRepository.updateTransaction(id, requestDto);
-        if (updated == 0) {
-            throw new IllegalArgumentException("거래 내역을 찾을 수 없습니다.");
-        }
-        return null;
+    public List<StoreSalesFinancialDto> getStoreFinancials(TransactionConditionDto condition, PeriodType periodType){
+        return transactionRepository.getStoreFinancials(condition, periodType);
     }
 
-    @Transactional
-    public List<StoreSalesFinancialDto> findStoreSalesFinancial(TransactionConditionDto condition, PeriodType period){
-        TransactionService repo = null;
-        return repo.findStoreSalesFinancial(condition, period);
+    private TransactionResponseDto toResponseDto(TransactionEntity entity) {
+        return new TransactionResponseDto(
+                entity.getId(),
+                entity.getStore().getId(),
+                entity.getStore().getName(),
+                entity.getDate(),
+                entity.getAmount(),
+                entity.getType()
+        );
     }
 }
