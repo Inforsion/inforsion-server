@@ -41,6 +41,3 @@ out/
 
 ### Environment Variables ###
 .env
-
-### Logs ###
-logs/
