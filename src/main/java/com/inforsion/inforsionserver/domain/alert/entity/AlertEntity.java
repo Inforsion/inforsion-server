@@ -42,6 +42,7 @@ public class AlertEntity {
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
+    @Builder.Default
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 

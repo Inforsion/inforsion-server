@@ -49,6 +49,7 @@ public class InventoryEntity {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate; // 유통기한
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "stock_status", nullable = false)
     private StockStatus stockStatus = StockStatus.SUFFICIENT; // 재고 상태

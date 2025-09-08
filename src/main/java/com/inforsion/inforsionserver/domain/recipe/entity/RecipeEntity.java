@@ -38,6 +38,7 @@ public class RecipeEntity {
     @Column(name = "unit", nullable = false)
     private String unit;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

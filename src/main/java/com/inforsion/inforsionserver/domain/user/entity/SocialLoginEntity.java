@@ -39,6 +39,7 @@ public class SocialLoginEntity {
     @Column(name = "last_login_at", nullable = false)
     private LocalDateTime lastLoginAt;
 
+    @Builder.Default
     @Column(name = "is_connected", nullable = false)
     private Boolean isConnected = true;
 

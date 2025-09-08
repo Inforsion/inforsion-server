@@ -49,7 +49,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                         t.store.name,
                         t.date,
                         t.amount,
-                        t.type
+                        t.transactionType
                 ))
                 .from(t)
                 .where(
@@ -71,7 +71,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .set(t.name, requestDto.getName())
                 .set(t.amount, requestDto.getAmount())
                 .set(t.date, requestDto.getDate())
-                .set(t.type, requestDto.getType())
+                .set(t.transactionType, requestDto.getType())
                 .where(t.id.eq(transactionId)) // 특정 행만 업데이트
                 .execute();
     }
@@ -129,61 +129,61 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
         // 총매출 (SALE)
         var grossExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("SALE"), t.amount);
+                t.transactionType.stringValue(), Expressions.constant("SALE"), t.amount);
 
         // 환불
         var refundExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("REFUND"), t.amount);
+                t.transactionType.stringValue(), Expressions.constant("REFUND"), t.amount);
 
         // 원가 전체 (COST)
         var costExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("COST"), t.amount);
+                t.transactionType.stringValue(), Expressions.constant("COST"), t.amount);
 
         // 세금
         var taxExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} THEN {2} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("TAX"), t.amount);
+                t.transactionType.stringValue(), Expressions.constant("TAX"), t.amount);
 
         // 결제수단별
         var cardExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("SALE"),
+                t.transactionType.stringValue(), Expressions.constant("SALE"),
                 t.paymentMethod.stringValue(), Expressions.constant("CARD"),
                 t.amount);
 
         // 현금 결제
         var cashExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("SALE"),
+                t.transactionType.stringValue(), Expressions.constant("SALE"),
                 t.paymentMethod.stringValue(), Expressions.constant("CASH"),
                 t.amount);
 
         // 이외 매출
         var otherSalesExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("SALE"),
+                t.transactionType.stringValue(), Expressions.constant("SALE"),
                 t.paymentMethod.stringValue(), Expressions.constant("OTHER"),
                 t.amount);
 
         // 재료비
         var materialExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("COST"),
+                t.transactionType.stringValue(), Expressions.constant("COST"),
                 t.costCategory.stringValue(), Expressions.constant("MATERIAL"),
                 t.amount);
 
         // 고정 비용
         var fixedExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("COST"),
+                t.transactionType.stringValue(), Expressions.constant("COST"),
                 t.costCategory.stringValue(), Expressions.constant("FIXED"),
                 t.amount);
 
         var otherCostExpr = Expressions.numberTemplate(BigDecimal.class,
                 "COALESCE(SUM(CASE WHEN {0} = {1} AND {2} = {3} THEN {4} ELSE 0 END), 0)",
-                t.type.stringValue(), Expressions.constant("COST"),
+                t.transactionType.stringValue(), Expressions.constant("COST"),
                 t.costCategory.stringValue(), Expressions.constant("OTHER"),
                 t.amount);
 
@@ -224,7 +224,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
 
 
     private BooleanExpression transactionTypeEq(TransactionType type) {
-        return type != null ? t.type.eq(type) : null;
+        return type != null ? t.transactionType.eq(type) : null;
     }
 
     private BooleanExpression dateBetween(LocalDateTime start, LocalDateTime end) {

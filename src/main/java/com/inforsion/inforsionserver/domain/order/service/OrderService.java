@@ -35,7 +35,7 @@ public class OrderService {
         transactionRepository.deleteAll(transactions);
 
         TransactionConditionDto condition = new TransactionConditionDto();
-        condition.setStoreId(order.getStoreEntity().getId());
+        condition.setStoreId(order.getTransaction().getStore().getId());
         condition.setStartDate(LocalDate.now().minusDays(SALES_DAYS));
         condition.setEndDate(LocalDate.now());
 

@@ -1,7 +1,9 @@
 package com.inforsion.inforsionserver.domain.transaction.entity;
 
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
+import com.inforsion.inforsionserver.global.enums.CostCategory;
 import com.inforsion.inforsionserver.global.enums.PaymentMethod;
+import com.inforsion.inforsionserver.global.enums.TransactionCategory;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,5 +47,11 @@ public class TransactionEntity {
 
     @Column(name = "transaction_memo", columnDefinition = "TEXT")
     private String transactionMemo; // 거래 메모
+
+    @Enumerated(EnumType.STRING)
+    private TransactionCategory transactionCategory; // 매출 관련 카테고리
+
+    @Enumerated(EnumType.STRING)
+    private CostCategory costCategory; // 원가 관련 카테고리
 
 }
