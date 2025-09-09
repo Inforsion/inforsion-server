@@ -1,48 +1,48 @@
 -- 카페 테스트 데이터
 
 -- 사용자 데이터 (카페 사장님들)
-INSERT IGNORE INTO users (name, email, password, phone, role, created_at, updated_at) VALUES
-('김민수', 'minsoo.kim@cafe.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', '010-1234-5678', 'ADMIN', NOW(), NOW()),
-('이지은', 'jieun.lee@coffee.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', '010-2345-6789', 'ADMIN', NOW(), NOW()),
-('박현우', 'hyeonwoo.park@dessert.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', '010-3456-7890', 'ADMIN', NOW(), NOW());
+INSERT IGNORE INTO users (username, email, password, created_at, updated_at) VALUES
+('김민수', 'minsoo.kim@cafe.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW()),
+('이지은', 'jieun.lee@coffee.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW()),
+('박현우', 'hyeonwoo.park@dessert.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW());
 
 -- 매장 데이터 (다양한 카페들)
-INSERT IGNORE INTO stores (name, address, phone, user_id, created_at, updated_at) VALUES
-('커피원두 본점', '서울시 강남구 테헤란로 123', '02-1234-5678', 1, NOW(), NOW()),
-('디저트&커피', '서울시 홍대 와우산로 456', '02-2345-6789', 2, NOW(), NOW()),
-('로스터리카페', '부산시 해운대구 센텀로 789', '051-3456-7890', 3, NOW(), NOW());
+INSERT IGNORE INTO stores (name, location, description, user_id, created_at, updated_at) VALUES
+('커피원두 본점', '서울시 강남구 테헤란로 123', '신선한 원두와 정성스러운 핸드드립으로 유명한 스페셜티 커피 전문점', 1, NOW(), NOW()),
+('디저트&커피', '서울시 홍대 와우산로 456', '수제 디저트와 특별한 시그니처 음료를 즐길 수 있는 아늑한 카페', 2, NOW(), NOW()),
+('로스터리카페', '부산시 해운대구 센텀로 789', '자체 로스팅으로 최고급 원두를 제공하는 프리미엄 로스터리 카페', 3, NOW(), NOW());
 
 -- 인벤토리 (카페 재료들)
-INSERT IGNORE INTO inventory (store_id, name, category, current_stock, minimum_stock, maximum_stock, unit, price_per_unit, supplier_name, last_restocked_date, status, created_at, updated_at) VALUES
+INSERT IGNORE INTO inventories (store_id, ingredient_name, current_stock, min_stock_level, max_stock_level, unit, unit_cost, last_restocked_date, expiry_date, stock_status, created_at, updated_at) VALUES
 -- 커피원두 본점 재료
-(1, '에티오피아 원두', '원두', 50.0, 10.0, 100.0, 'kg', 25000.00, '원두공급업체', '2024-01-15', 'IN_STOCK', NOW(), NOW()),
-(1, '콜롬비아 원두', '원두', 30.0, 10.0, 100.0, 'kg', 28000.00, '원두공급업체', '2024-01-15', 'IN_STOCK', NOW(), NOW()),
-(1, '우유', '유제품', 20.0, 5.0, 50.0, 'L', 2500.00, '유제품공급업체', '2024-01-20', 'IN_STOCK', NOW(), NOW()),
-(1, '바닐라시럽', '시럽', 10.0, 3.0, 20.0, 'L', 8000.00, '시럽공급업체', '2024-01-18', 'IN_STOCK', NOW(), NOW()),
-(1, '카라멜시럽', '시럽', 8.0, 3.0, 20.0, 'L', 8500.00, '시럽공급업체', '2024-01-18', 'IN_STOCK', NOW(), NOW()),
-(1, '휘핑크림', '유제품', 15.0, 5.0, 30.0, 'L', 12000.00, '유제품공급업체', '2024-01-19', 'IN_STOCK', NOW(), NOW()),
-(1, '일회용 컵 (S)', '용기', 500.0, 100.0, 1000.0, '개', 80.00, '포장재업체', '2024-01-10', 'IN_STOCK', NOW(), NOW()),
-(1, '일회용 컵 (M)', '용기', 400.0, 100.0, 1000.0, '개', 100.00, '포장재업체', '2024-01-10', 'IN_STOCK', NOW(), NOW()),
-(1, '일회용 컵 (L)', '용기', 300.0, 100.0, 1000.0, '개', 120.00, '포장재업체', '2024-01-10', 'IN_STOCK', NOW(), NOW()),
+(1, '에티오피아 원두', 50.0, 10.0, 100.0, 'kg', 25000.00, '2024-01-15', '2024-06-15', 'SUFFICIENT', NOW(), NOW()),
+(1, '콜롬비아 원두', 30.0, 10.0, 100.0, 'kg', 28000.00, '2024-01-15', '2024-06-15', 'SUFFICIENT', NOW(), NOW()),
+(1, '우유', 20.0, 5.0, 50.0, 'L', 2500.00, '2024-01-20', '2024-02-05', 'SUFFICIENT', NOW(), NOW()),
+(1, '바닐라시럽', 10.0, 3.0, 20.0, 'L', 8000.00, '2024-01-18', '2024-12-31', 'SUFFICIENT', NOW(), NOW()),
+(1, '카라멜시럽', 8.0, 3.0, 20.0, 'L', 8500.00, '2024-01-18', '2024-12-31', 'LOW', NOW(), NOW()),
+(1, '휘핑크림', 15.0, 5.0, 30.0, 'L', 12000.00, '2024-01-19', '2024-02-15', 'SUFFICIENT', NOW(), NOW()),
+(1, '일회용 컵 (S)', 500.0, 100.0, 1000.0, '개', 80.00, '2024-01-10', '2025-12-31', 'SUFFICIENT', NOW(), NOW()),
+(1, '일회용 컵 (M)', 400.0, 100.0, 1000.0, '개', 100.00, '2024-01-10', '2025-12-31', 'SUFFICIENT', NOW(), NOW()),
+(1, '일회용 컵 (L)', 300.0, 100.0, 1000.0, '개', 120.00, '2024-01-10', '2025-12-31', 'SUFFICIENT', NOW(), NOW()),
 
 -- 디저트&커피 재료
-(2, '과테말라 원두', '원두', 40.0, 10.0, 100.0, 'kg', 26000.00, '원두공급업체', '2024-01-16', 'IN_STOCK', NOW(), NOW()),
-(2, '우유', '유제품', 25.0, 5.0, 50.0, 'L', 2500.00, '유제품공급업체', '2024-01-20', 'IN_STOCK', NOW(), NOW()),
-(2, '초콜릿시럽', '시럽', 12.0, 3.0, 20.0, 'L', 9000.00, '시럽공급업체', '2024-01-18', 'IN_STOCK', NOW(), NOW()),
-(2, '딸기시럽', '시럽', 6.0, 3.0, 20.0, 'L', 8500.00, '시럽공급업체', '2024-01-18', 'IN_STOCK', NOW(), NOW()),
-(2, '크로와상', '디저트', 50.0, 10.0, 100.0, '개', 1500.00, '베이커리공급업체', '2024-01-21', 'IN_STOCK', NOW(), NOW()),
-(2, '머핀', '디저트', 40.0, 10.0, 80.0, '개', 2000.00, '베이커리공급업체', '2024-01-21', 'IN_STOCK', NOW(), NOW()),
-(2, '마카롱', '디저트', 30.0, 5.0, 50.0, '개', 3000.00, '베이커리공급업체', '2024-01-21', 'IN_STOCK', NOW(), NOW()),
+(2, '과테말라 원두', 40.0, 10.0, 100.0, 'kg', 26000.00, '2024-01-16', '2024-06-16', 'SUFFICIENT', NOW(), NOW()),
+(2, '우유', 25.0, 5.0, 50.0, 'L', 2500.00, '2024-01-20', '2024-02-05', 'SUFFICIENT', NOW(), NOW()),
+(2, '초콜릿시럽', 12.0, 3.0, 20.0, 'L', 9000.00, '2024-01-18', '2024-12-31', 'SUFFICIENT', NOW(), NOW()),
+(2, '딸기시럽', 6.0, 3.0, 20.0, 'L', 8500.00, '2024-01-18', '2024-12-31', 'LOW', NOW(), NOW()),
+(2, '크로와상', 50.0, 10.0, 100.0, '개', 1500.00, '2024-01-21', '2024-01-23', 'SUFFICIENT', NOW(), NOW()),
+(2, '머핀', 40.0, 10.0, 80.0, '개', 2000.00, '2024-01-21', '2024-01-24', 'SUFFICIENT', NOW(), NOW()),
+(2, '마카롱', 30.0, 5.0, 50.0, '개', 3000.00, '2024-01-21', '2024-01-23', 'SUFFICIENT', NOW(), NOW()),
 
 -- 로스터리카페 재료
-(3, '브라질 원두', '원두', 60.0, 10.0, 120.0, 'kg', 24000.00, '원두공급업체', '2024-01-17', 'IN_STOCK', NOW(), NOW()),
-(3, '케냐 원두', '원두', 35.0, 10.0, 100.0, 'kg', 30000.00, '원두공급업체', '2024-01-17', 'IN_STOCK', NOW(), NOW()),
-(3, '오트밀크', '식물성우유', 18.0, 5.0, 40.0, 'L', 3500.00, '식물성우유공급업체', '2024-01-19', 'IN_STOCK', NOW(), NOW()),
-(3, '아몬드밀크', '식물성우유', 15.0, 5.0, 40.0, 'L', 4000.00, '식물성우유공급업체', '2024-01-19', 'IN_STOCK', NOW(), NOW()),
-(3, '헤이즐넛시럽', '시럽', 9.0, 3.0, 20.0, 'L', 9500.00, '시럽공급업체', '2024-01-18', 'IN_STOCK', NOW(), NOW());
+(3, '브라질 원두', 60.0, 10.0, 120.0, 'kg', 24000.00, '2024-01-17', '2024-06-17', 'SUFFICIENT', NOW(), NOW()),
+(3, '케냐 원두', 35.0, 10.0, 100.0, 'kg', 30000.00, '2024-01-17', '2024-06-17', 'SUFFICIENT', NOW(), NOW()),
+(3, '오트밀크', 18.0, 5.0, 40.0, 'L', 3500.00, '2024-01-19', '2024-02-10', 'SUFFICIENT', NOW(), NOW()),
+(3, '아몬드밀크', 15.0, 5.0, 40.0, 'L', 4000.00, '2024-01-19', '2024-02-10', 'SUFFICIENT', NOW(), NOW()),
+(3, '헤이즐넛시럽', 9.0, 3.0, 20.0, 'L', 9500.00, '2024-01-18', '2024-12-31', 'SUFFICIENT', NOW(), NOW());
 
 -- 제품 (메뉴)
-INSERT IGNORE INTO products (store_id, name, price, category, description, is_available, created_at, updated_at) VALUES
+INSERT IGNORE INTO products (store_id, name, price, category, description, in_stock, created_at, updated_at) VALUES
 -- 커피원두 본점 메뉴
 (1, '에티오피아 드립커피', 4500.00, '커피', '산미가 살아있는 에티오피아 원두로 내린 드립커피', true, NOW(), NOW()),
 (1, '콜롬비아 드립커피', 5000.00, '커피', '부드럽고 균형잡힌 맛의 콜롬비아 원두 드립커피', true, NOW(), NOW()),
@@ -67,41 +67,41 @@ INSERT IGNORE INTO products (store_id, name, price, category, description, is_av
 (3, '헤이즐넛라떼', 6200.00, '커피', '헤이즐넛시럽이 들어간 고급 라떼', true, NOW(), NOW());
 
 -- 레시피 (메뉴-재료 연결)
-INSERT IGNORE INTO recipes (menu_id, inventory_id, amount_per_menu, is_active, created_at, updated_at) VALUES
+INSERT IGNORE INTO receipies (menu_id, inventory_id, amount_per_menu, unit, is_active, created_at, updated_at) VALUES
 -- 에티오피아 드립커피 레시피
-(1, 1, 0.025, true, NOW(), NOW()), -- 에티오피아 원두 25g
-(1, 7, 1.0, true, NOW(), NOW()),   -- S컵 1개
+(1, 1, 0.025, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 25g
+(1, 7, 1.0, '개', true, NOW(), NOW()),   -- S컵 1개
 
 -- 콜롬비아 드립커피 레시피
-(2, 2, 0.025, true, NOW(), NOW()), -- 콜롬비아 원두 25g
-(2, 7, 1.0, true, NOW(), NOW()),   -- S컵 1개
+(2, 2, 0.025, 'kg', true, NOW(), NOW()), -- 콜롬비아 원두 25g
+(2, 7, 1.0, '개', true, NOW(), NOW()),   -- S컵 1개
 
 -- 아메리카노 레시피
-(3, 1, 0.020, true, NOW(), NOW()), -- 에티오피아 원두 20g
-(3, 8, 1.0, true, NOW(), NOW()),   -- M컵 1개
+(3, 1, 0.020, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 20g
+(3, 8, 1.0, '개', true, NOW(), NOW()),   -- M컵 1개
 
 -- 카페라떼 레시피
-(4, 1, 0.020, true, NOW(), NOW()), -- 에티오피아 원두 20g
-(4, 3, 0.15, true, NOW(), NOW()),  -- 우유 150ml
-(4, 8, 1.0, true, NOW(), NOW()),   -- M컵 1개
+(4, 1, 0.020, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 20g
+(4, 3, 0.15, 'L', true, NOW(), NOW()),  -- 우유 150ml
+(4, 8, 1.0, '개', true, NOW(), NOW()),   -- M컵 1개
 
 -- 바닐라라떼 레시피
-(5, 1, 0.020, true, NOW(), NOW()), -- 에티오피아 원두 20g
-(5, 3, 0.15, true, NOW(), NOW()),  -- 우유 150ml
-(5, 4, 0.020, true, NOW(), NOW()), -- 바닐라시럽 20ml
-(5, 8, 1.0, true, NOW(), NOW()),   -- M컵 1개
+(5, 1, 0.020, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 20g
+(5, 3, 0.15, 'L', true, NOW(), NOW()),  -- 우유 150ml
+(5, 4, 0.020, 'L', true, NOW(), NOW()), -- 바닐라시럽 20ml
+(5, 8, 1.0, '개', true, NOW(), NOW()),   -- M컵 1개
 
 -- 카라멜마키아또 레시피
-(6, 1, 0.020, true, NOW(), NOW()), -- 에티오피아 원두 20g
-(6, 3, 0.15, true, NOW(), NOW()),  -- 우유 150ml
-(6, 5, 0.020, true, NOW(), NOW()), -- 카라멜시럽 20ml
-(6, 6, 0.050, true, NOW(), NOW()), -- 휘핑크림 50ml
-(6, 9, 1.0, true, NOW(), NOW()),   -- L컵 1개
+(6, 1, 0.020, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 20g
+(6, 3, 0.15, 'L', true, NOW(), NOW()),  -- 우유 150ml
+(6, 5, 0.020, 'L', true, NOW(), NOW()), -- 카라멜시럽 20ml
+(6, 6, 0.050, 'L', true, NOW(), NOW()), -- 휘핑크림 50ml
+(6, 9, 1.0, '개', true, NOW(), NOW()),   -- L컵 1개
 
 -- 초콜릿라떼 레시피 (디저트&커피)
-(8, 10, 0.020, true, NOW(), NOW()), -- 과테말라 원두 20g
-(8, 11, 0.15, true, NOW(), NOW()),  -- 우유 150ml
-(8, 12, 0.025, true, NOW(), NOW()); -- 초콜릿시럽 25ml
+(8, 10, 0.020, 'kg', true, NOW(), NOW()), -- 과테말라 원두 20g
+(8, 11, 0.15, 'L', true, NOW(), NOW()),  -- 우유 150ml
+(8, 12, 0.025, 'L', true, NOW(), NOW()); -- 초콜릿시럽 25ml
 
 -- 트랜잭션 데이터
 INSERT IGNORE INTO transactions (store_id, total_amount, transaction_type, payment_method, transaction_date, created_at, updated_at) VALUES

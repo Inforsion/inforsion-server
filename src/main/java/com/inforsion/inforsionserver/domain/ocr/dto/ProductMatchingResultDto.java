@@ -32,6 +32,7 @@ public class ProductMatchingResultDto {
         
         // 사용자가 선택한 제품 (null이면 아직 미선택)
         private Integer selectedProductId;
+        @Builder.Default
         private Boolean confirmed = false;
     }
     
@@ -44,6 +45,7 @@ public class ProductMatchingResultDto {
         private String productName;
         private BigDecimal price;
         private Double similarityScore; // 유사도 점수 (0.0 ~ 1.0)
+        @Builder.Default
         private Boolean exactMatch = false;
     }
 }

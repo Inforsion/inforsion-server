@@ -15,7 +15,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update # java 클래스에 대응해서 자동으로 동기화
     show-sql: true
     properties:
       hibernate:
