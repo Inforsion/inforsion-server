@@ -15,12 +15,20 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: update # java 클래스에 대응해서 자동으로 동기화
-    show-sql: true
+      ddl-auto: update # 엔티티 클래스 기준으로 테이블 구조 자동 동기화 (CREATE/ALTER TABLE)
+    show-sql: true     # 실행되는 SQL 쿼리를 콘솔에 출력
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect  # MySQL 데이터베이스 방언 설정
+        format_sql: true                            # SQL 쿼리를 보기 좋게 포맷팅
+    defer-datasource-initialization: true           # JPA 테이블 생성 후 data.sql 실행하도록 순서 조정
+  
+  # 데이터베이스 초기화 설정 (data.sql 자동 실행)
+  sql:
+    init:
+      mode: always                      # 애플리케이션 시작시 항상 SQL 스크립트 실행
+      data-locations: classpath:data.sql # 초기 데이터 삽입 SQL 파일 위치 지정
+      encoding: UTF-8                   # 한글 데이터 깨짐 방지를 위한 인코딩 설정
 # 파일 업로드 설정
   servlet:
     multipart:
@@ -110,7 +118,15 @@ spring:
     password: ${DB_PASSWORD:inforsion_password}
 
   jpa:
-    show-sql: false
+    show-sql: false                         # Docker 환경에서는 SQL 로그 비활성화 (성능 최적화)
+    defer-datasource-initialization: true   # JPA 테이블 생성 후 data.sql 실행하도록 순서 조정
+
+  # Docker 환경 데이터베이스 초기화 설정
+  sql:
+    init:
+      mode: always                      # Docker 컨테이너 시작시 항상 테스트 데이터 삽입
+      data-locations: classpath:data.sql # 카페 테스트 데이터 (3개 매장, 재고, 메뉴 등)
+      encoding: UTF-8                   # 한글 카페 데이터 깨짐 방지
 
   # MongoDB 설정 (Docker 환경)
   data:
@@ -153,11 +169,19 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: update                      # RDS 테이블 구조 자동 동기화
+    show-sql: false                         # RDS 환경에서는 SQL 로그 비활성화 (성능상 이유)
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+    defer-datasource-initialization: true   # JPA 테이블 생성 후 data.sql 실행하도록 순서 조정
+
+  # RDS 환경 데이터베이스 초기화 설정  
+  sql:
+    init:
+      mode: always                      # RDS 환경에서도 항상 테스트 데이터 삽입
+      data-locations: classpath:data.sql # 카페 테스트 데이터 (3개 매장, 재고, 메뉴 등)
+      encoding: UTF-8                   # 한글 카페 데이터 깨짐 방지
 
   # MongoDB 설정 (기존 유지)
   data:

@@ -1,18 +1,34 @@
--- 카페 테스트 데이터
+-- ===========================================
+-- 인포전(Inforsion) 카페 관리 시스템 테스트 데이터
+-- ===========================================
+-- 이 파일은 개발/테스트 환경에서 사용할 샘플 데이터를 포함합니다.
+-- 총 3개의 카페(커피원두 본점, 디저트&커피, 로스터리카페)의 
+-- 실제 운영 상황을 시뮬레이션하는 데이터로 구성되어 있습니다.
+-- ===========================================
 
--- 사용자 데이터 (카페 사장님들)
+-- MySQL Workbench에서 직접 실행시 데이터베이스 선택 (Spring Boot에서는 자동으로 처리됨)
+-- USE inforsion_db;
+
+-- 1. 사용자 데이터 (카페 사장님들)
+-- UserEntity 테이블: users
+-- 각 카페의 사장님 계정 정보
 INSERT IGNORE INTO users (username, email, password, created_at, updated_at) VALUES
 ('김민수', 'minsoo.kim@cafe.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW()),
 ('이지은', 'jieun.lee@coffee.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW()),
 ('박현우', 'hyeonwoo.park@dessert.com', '$2a$10$N9qo8uLOickgx2ZMRj6OZO0VJYr8Ql5L8f9YR6xWv.7M2nQg1i6M.', NOW(), NOW());
 
--- 매장 데이터 (다양한 카페들)
+-- 2. 매장 데이터 (카페 정보)
+-- StoreEntity 테이블: stores
+-- 3개 카페의 기본 정보 (위치, 설명, 소유자)
 INSERT IGNORE INTO stores (name, location, description, user_id, created_at, updated_at) VALUES
 ('커피원두 본점', '서울시 강남구 테헤란로 123', '신선한 원두와 정성스러운 핸드드립으로 유명한 스페셜티 커피 전문점', 1, NOW(), NOW()),
 ('디저트&커피', '서울시 홍대 와우산로 456', '수제 디저트와 특별한 시그니처 음료를 즐길 수 있는 아늑한 카페', 2, NOW(), NOW()),
 ('로스터리카페', '부산시 해운대구 센텀로 789', '자체 로스팅으로 최고급 원두를 제공하는 프리미엄 로스터리 카페', 3, NOW(), NOW());
 
--- 인벤토리 (카페 재료들)
+-- 3. 재고 관리 데이터 (인벤토리)
+-- InventoryEntity 테이블: inventories
+-- 각 카페별 원자재, 재료, 소모품 현황
+-- 재고 상태: SUFFICIENT(충분), LOW(부족), OUT_OF_STOCK(품절)
 INSERT IGNORE INTO inventories (store_id, ingredient_name, current_stock, min_stock_level, max_stock_level, unit, unit_cost, last_restocked_date, expiry_date, stock_status, created_at, updated_at) VALUES
 -- 커피원두 본점 재료
 (1, '에티오피아 원두', 50.0, 10.0, 100.0, 'kg', 25000.00, '2024-01-15', '2024-06-15', 'SUFFICIENT', NOW(), NOW()),
@@ -41,7 +57,9 @@ INSERT IGNORE INTO inventories (store_id, ingredient_name, current_stock, min_st
 (3, '아몬드밀크', 15.0, 5.0, 40.0, 'L', 4000.00, '2024-01-19', '2024-02-10', 'SUFFICIENT', NOW(), NOW()),
 (3, '헤이즐넛시럽', 9.0, 3.0, 20.0, 'L', 9500.00, '2024-01-18', '2024-12-31', 'SUFFICIENT', NOW(), NOW());
 
--- 제품 (메뉴)
+-- 4. 제품 및 메뉴 데이터
+-- ProductEntity 테이블: products
+-- 각 카페의 판매 메뉴 (커피, 디저트 등)
 INSERT IGNORE INTO products (store_id, name, price, category, description, in_stock, created_at, updated_at) VALUES
 -- 커피원두 본점 메뉴
 (1, '에티오피아 드립커피', 4500.00, '커피', '산미가 살아있는 에티오피아 원두로 내린 드립커피', true, NOW(), NOW()),
@@ -66,7 +84,10 @@ INSERT IGNORE INTO products (store_id, name, price, category, description, in_st
 (3, '아몬드라떼', 6000.00, '커피', '고소한 아몬드밀크 라떼', true, NOW(), NOW()),
 (3, '헤이즐넛라떼', 6200.00, '커피', '헤이즐넛시럽이 들어간 고급 라떼', true, NOW(), NOW());
 
--- 레시피 (메뉴-재료 연결)
+-- 5. 레시피 데이터 (메뉴별 재료 구성)
+-- RecipeEntity 테이블: receipies
+-- 각 메뉴를 만들기 위해 필요한 재료와 분량
+-- amount_per_menu: 메뉴 1개 당 필요한 재료량
 INSERT IGNORE INTO receipies (menu_id, inventory_id, amount_per_menu, unit, is_active, created_at, updated_at) VALUES
 -- 에티오피아 드립커피 레시피
 (1, 1, 0.025, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 25g
@@ -103,7 +124,10 @@ INSERT IGNORE INTO receipies (menu_id, inventory_id, amount_per_menu, unit, is_a
 (8, 11, 0.15, 'L', true, NOW(), NOW()),  -- 우유 150ml
 (8, 12, 0.025, 'L', true, NOW(), NOW()); -- 초콜릿시럽 25ml
 
--- 트랜잭션 데이터
+-- 6. 거래 데이터 (매출 정보)
+-- TransactionEntity 테이블: transactions
+-- 2024년 1월 22일 하루 동안의 매출 현황
+-- 결제 방법: CARD(카드), CASH(현금), MOBILE_PAY(모바일페이)
 INSERT IGNORE INTO transactions (store_id, total_amount, transaction_type, payment_method, transaction_date, created_at, updated_at) VALUES
 (1, 15000.00, 'SALE', 'CARD', '2024-01-22 09:30:00', NOW(), NOW()),
 (1, 22000.00, 'SALE', 'CASH', '2024-01-22 11:15:00', NOW(), NOW()),
@@ -112,7 +136,9 @@ INSERT IGNORE INTO transactions (store_id, total_amount, transaction_type, payme
 (2, 12000.00, 'SALE', 'CASH', '2024-01-22 16:30:00', NOW(), NOW()),
 (3, 24000.00, 'SALE', 'CARD', '2024-01-22 13:00:00', NOW(), NOW());
 
--- 주문 데이터
+-- 7. 주문 상세 데이터
+-- OrderEntity 테이블: orders
+-- 각 거래별 주문 내역 (어떤 메뉴를 몇 개씩 주문했는지)
 INSERT IGNORE INTO orders (transaction_id, product_id, quantity, unit_price, total_price, created_at, updated_at) VALUES
 -- 트랜잭션 1의 주문들
 (1, 1, 1, 4500.00, 4500.00, NOW(), NOW()), -- 에티오피아 드립커피 1잔
@@ -138,7 +164,10 @@ INSERT IGNORE INTO orders (transaction_id, product_id, quantity, unit_price, tot
 (6, 13, 2, 5500.00, 11000.00, NOW(), NOW()), -- 브라질 핸드드립 2잔
 (6, 14, 2, 6500.00, 13000.00, NOW(), NOW()); -- 케냐 스페셜티 2잔
 
--- 인벤토리 로그 (최근 재고 변화 기록)
+-- 8. 재고 변화 로그
+-- InventoryLogEntity 테이블: inventory_logs
+-- 재고 입출고 기록 추적
+-- log_type: RESTOCK(입고), DEDUCTION(차감), ADJUSTMENT(조정)
 INSERT IGNORE INTO inventory_logs (inventory_id, log_type, quantity_change, before_quantity, after_quantity, reason, created_at) VALUES
 -- 원두 사용 기록들
 (1, 'DEDUCTION', -0.065, 50.065, 50.0, '에티오피아 드립커피 주문으로 인한 차감', '2024-01-22 09:30:00'),
@@ -151,14 +180,20 @@ INSERT IGNORE INTO inventory_logs (inventory_id, log_type, quantity_change, befo
 (2, 'RESTOCK', 30.0, 0.0, 30.0, '정기 원두 입고', '2024-01-15 08:00:00'),
 (3, 'RESTOCK', 20.0, 0.0, 20.0, '유제품 정기 입고', '2024-01-20 07:00:00');
 
--- 알림 데이터
+-- 9. 알림 시스템 데이터
+-- AlertEntity 테이블: alerts
+-- 재고 부족, 입고 필요 등의 알림
+-- is_read: 알림 확인 여부 (false=미확인, true=확인함)
 INSERT IGNORE INTO alerts (user_id, store_id, inventory_id, alert_type, title, message, is_read, created_at) VALUES
 (1, 1, 5, 'LOW_STOCK', '재고 부족 알림', '카라멜시럽의 재고가 부족합니다. (현재: 8L, 최소: 10L)', false, '2024-01-21 15:30:00'),
 (2, 2, 13, 'LOW_STOCK', '재고 부족 알림', '딸기시럽의 재고가 부족합니다. (현재: 6L, 최소: 10L)', false, '2024-01-21 16:00:00'),
 (1, 1, 2, 'RESTOCK_NEEDED', '입고 필요 알림', '콜롬비아 원두의 입고가 필요합니다.', false, '2024-01-22 08:00:00'),
 (2, 2, 14, 'LOW_STOCK', '재고 부족 알림', '마카롱의 재고가 부족합니다.', true, '2024-01-20 10:00:00');
 
--- 분석 데이터 (일별 매출 및 주요 지표)
+-- 10. 분석 및 통계 데이터
+-- AnalyticsEntity 테이블: analytics
+-- 일별 매출, 주문 수, 고객 수, 평균 주문금액 등
+-- 매장별 성과 분석을 위한 데이터
 INSERT IGNORE INTO analytics (store_id, date, total_sales, total_orders, top_selling_product_id, total_customers, average_order_value, created_at, updated_at) VALUES
 (1, '2024-01-22', 45500.00, 6, 3, 3, 15166.67, NOW(), NOW()), -- 커피원두 본점
 (2, '2024-01-22', 30500.00, 5, 11, 2, 15250.00, NOW(), NOW()), -- 디저트&커피
@@ -167,10 +202,17 @@ INSERT IGNORE INTO analytics (store_id, date, total_sales, total_orders, top_sel
 (2, '2024-01-21', 25000.00, 4, 8, 2, 12500.00, NOW(), NOW()),
 (3, '2024-01-21', 19500.00, 3, 15, 2, 9750.00, NOW(), NOW());
 
--- OCR 원본 데이터 (MongoDB에서 사용할 테스트 데이터 - 실제로는 MongoDB에 저장되지만 참조용)
--- 실제 MongoDB 컬렉션명: ocr_raw_data
+-- 11. OCR (광학 문자 인식) 시스템 데이터
+-- ===========================================
+-- OCR 원본 데이터는 MongoDB에 저장됨 (컬렉션명: ocr_raw_data)
+-- 영수증이나 주문서 이미지의 원본 데이터
+-- ===========================================
 
--- OCR 결과 데이터 (매장 주문서 OCR 처리 결과)
+-- OCR 결과 데이터 (텍스트 추출 및 매칭 결과)
+-- OcrResultEntity 테이블: ocr_results
+-- OCR로 인식된 아이템을 실제 메뉴와 매칭
+-- match_method: AUTO(자동매칭), MANUAL(수동매칭)
+-- match_type: MENU(메뉴), INGREDIENT(재료), UNKNOWN(미매칭)
 INSERT IGNORE INTO ocr_results (store_id, raw_data_id, ocr_item_name, quantity, price, match_type, target_id, total_amount, match_method, created_at, updated_at) VALUES
 (1, 1001, '아메리카노', 3, 4000, 'MENU', 3, 12000.00, 'AUTO', '2024-01-22 08:30:00', NOW()),
 (1, 1001, '카페라떼', 2, 5500, 'MENU', 4, 11000.00, 'AUTO', '2024-01-22 08:30:00', NOW()),
