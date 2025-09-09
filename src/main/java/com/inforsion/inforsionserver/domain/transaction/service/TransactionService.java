@@ -35,7 +35,7 @@ public class TransactionService {
                 .name(requestDto.getName())
                 .date(requestDto.getDate())
                 .amount(requestDto.getAmount())
-                .type(requestDto.getType())
+                .transactionType(requestDto.getType())
                 .paymentMethod(requestDto.getPaymentMethod())
                 .costCategory(requestDto.getCostCategory())
                 .store(store)
@@ -70,7 +70,7 @@ public class TransactionService {
         entity.setName(requestDto.getName());
         entity.setDate(requestDto.getDate());
         entity.setAmount(requestDto.getAmount());
-        entity.setType(requestDto.getType());
+        entity.setTransactionType(requestDto.getType());
         entity.setPaymentMethod(requestDto.getPaymentMethod());
         entity.setCostCategory(requestDto.getCostCategory());
 
@@ -106,7 +106,7 @@ public class TransactionService {
                 entity.getStore().getName(),
                 entity.getDate(),
                 entity.getAmount(),
-                entity.getType()
+                entity.getTransactionType()
         );
     }
 }
