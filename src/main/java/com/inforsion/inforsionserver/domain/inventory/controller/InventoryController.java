@@ -17,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 
 @Tag(name = "Inventory", description = "매장 재고 관리 API - 재고 내역 관리")
 @RestController
@@ -45,25 +43,6 @@ public class InventoryController {
     ) {
         Page<InventoryDto> response = inventoryService.getInventories(storeId, pageable);
         return ResponseEntity.ok(response);
-    }
-
-    @Operation(
-            summary = "재고 생성",
-            description = "재고를 생성합니다. 매장의 재고관리를 위해 사용됩니다."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "재고 생성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-
-    @PostMapping
-    public ResponseEntity<InventoryDto> createInventory(
-            @Parameter(description = "재고 생성 요청 데이터", required = true)
-            @Valid @RequestBody InventoryDto inventoryDto
-            ) {
-        InventoryDto created = inventoryService.createInventory(inventoryDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(
@@ -104,5 +83,25 @@ public class InventoryController {
         inventoryService.deleteInventory(inventoryId);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(
+            summary = "재고 생성",
+            description = "재고를 생성합니다. 매장의 재고관리를 위해 사용됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "재고 생성 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+
+    @PostMapping
+    public ResponseEntity<InventoryDto> createInventory(
+            @Parameter(description = "재고 생성 요청 데이터", required = true)
+            @Valid @RequestBody InventoryDto inventoryDto
+    ) {
+        InventoryDto created = inventoryService.createInventory(inventoryDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
 
 }

@@ -30,24 +30,6 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @Operation(
-            summary = "거래 생성",
-            description = "새로운 거래(수입/지출)를 생성합니다. 매장의 수익 및 비용 관리를 위해 사용됩니다."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "거래 생성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @PostMapping
-    public ResponseEntity<TransactionResponseDto> createTransaction(
-            @Parameter(description = "거래 생성 요청 데이터", required = true)
-            @Valid @RequestBody TransactionRequestDto requestDto
-    ) {
-        TransactionResponseDto created = transactionService.createTransaction(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    @Operation(
             summary = "거래 목록 조회",
             description = "지정된 매장의 거래 내역을 조건에 따라 조회합니다. 거래 유형(수입/지출)과 기간을 필터로 사용할 수 있습니다."
     )
@@ -128,5 +110,23 @@ public class TransactionController {
             ){
         List<StoreSalesFinancialDto> result = transactionService.getStoreFinancials(condition, periodType);
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "거래 생성",
+            description = "새로운 거래(수입/지출)를 생성합니다. 매장의 수익 및 비용 관리를 위해 사용됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "거래 생성 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping
+    public ResponseEntity<TransactionResponseDto> createTransaction(
+            @Parameter(description = "거래 생성 요청 데이터", required = true)
+            @Valid @RequestBody TransactionRequestDto requestDto
+    ) {
+        TransactionResponseDto created = transactionService.createTransaction(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }
