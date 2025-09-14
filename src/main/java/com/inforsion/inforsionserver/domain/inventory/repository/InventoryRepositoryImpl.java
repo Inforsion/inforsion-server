@@ -27,12 +27,12 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     public Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable) {
         QInventoryEntity inventory = QInventoryEntity.inventoryEntity;
 
-        List<OrderSpecifier<?>> orders = getOrderSpecifiers(pageable, inventory);
+        List<OrderSpecifier<?>> sortOrders = getOrderSpecifiers(pageable, inventory);
 
         List<InventoryEntity> content = queryFactory
                 .selectFrom(inventory)
                 .where(inventory.store.id.eq(storeId))
-                .orderBy(orders.toArray(OrderSpecifier[]::new))
+                .orderBy(sortOrders.toArray(OrderSpecifier[]::new))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -78,7 +78,7 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .set(t.unitCost, inventoryDto.getUnitCost())
                 .set(t.expiryDate, inventoryDto.getExpiryDate())
                 .set(t.lastRestockedDate, inventoryDto.getLastRestockedDate())
-                .where(t.id.eq(inventoryId)) // 특정 행만 수정
+                .where(t.id.eq(inventoryId))
                 .execute();
     }
 

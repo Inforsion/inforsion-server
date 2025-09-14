@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 @Setter
 public class TransactionEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transaction_id")
     private Integer id; // 거래 조회를 위한 id
 

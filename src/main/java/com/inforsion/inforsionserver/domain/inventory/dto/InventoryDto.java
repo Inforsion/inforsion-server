@@ -2,16 +2,16 @@ package com.inforsion.inforsionserver.domain.inventory.dto;
 
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
 
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Schema(description = "재고 Dto")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class InventoryDto {

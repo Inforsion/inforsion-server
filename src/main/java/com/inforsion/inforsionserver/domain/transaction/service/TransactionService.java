@@ -50,6 +50,7 @@ public class TransactionService {
     /**
      * 거래 조회
      */
+    @Transactional
     public List<TransactionResponseDto> getTransaction(
             Integer storeId,
             TransactionType transactionType,

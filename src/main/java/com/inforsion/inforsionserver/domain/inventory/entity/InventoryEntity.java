@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 public class InventoryEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ingredient_id")
     private Integer id;
 
