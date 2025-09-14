@@ -8,12 +8,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 
 public interface InventoryRepositoryCustom {
-    public Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable);
-    public Long updateInventory(Integer inventoryId, InventoryDto inventoryDto);
-    public Long deleteInventory(Integer inventoryId);
+    Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable);
+    Long updateInventory(Integer inventoryId, InventoryDto inventoryDto);
+    Long deleteInventory(Integer inventoryId);
+    List<InventoryEntity> findItemsExpiringBefore(LocalDate targetDate);
 }

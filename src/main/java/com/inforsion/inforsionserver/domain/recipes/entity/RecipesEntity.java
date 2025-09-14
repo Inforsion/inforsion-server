@@ -25,7 +25,7 @@ public class RecipesEntity {
     private BigDecimal amountPerMenu;
 
     @Column(name = "unit")
-    private String unit;
+    private String unit; // 단위
 
     @Column(name = "is_active")
     private Boolean isActive;

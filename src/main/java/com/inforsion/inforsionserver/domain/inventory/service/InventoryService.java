@@ -12,6 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -71,8 +74,15 @@ public class InventoryService {
     @Transactional
     public void deleteInventory(Integer inventoryId) {
         InventoryEntity entity = inventoryRepository.findById(inventoryId)
-                .orElseThrow(()->new IllegalArgumentException("Id" + inventoryId + "에 해당하는 재고가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("Id" + inventoryId + "에 해당하는 재고가 없습니다."));
 
         inventoryRepository.delete(entity);
+    }
+
+    // 유통기한 임박 알림
+    @Transactional
+    public List<InventoryDto> getExpiringItems(int days){
+        LocalDate targetDate = LocalDate.now().plusDays(days);
+        return InventoryRepository.findItemsExpiringBefore(targetDate);
     }
 }

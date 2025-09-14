@@ -3,6 +3,7 @@ package com.inforsion.inforsionserver.domain.inventory.repository;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
+import com.inforsion.inforsionserver.domain.inventory.service.InventoryService;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -12,6 +13,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +25,7 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     
     private final JPAQueryFactory queryFactory;
     private final QInventoryEntity t = QInventoryEntity.inventoryEntity;
+    private final InventoryService inventoryService;
 
     // 전체 재고 조회 - 페이징 처리: 이름, 현재 재료량, 유통기한, 최근 입고 순 정렬 가능
     @Override
@@ -89,5 +94,14 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .delete(t)
                 .where(t.id.eq(inventoryId))
                 .execute();
+    }
+
+    // 유통기한
+    @Override
+    public List<InventoryDto> findItemsExpiringBefore(LocalDate targetDate){
+        return queryFactory
+                .selectFrom(t)
+                .where(t.expiryDate.before(targetDate))
+                .fetch();
     }
 }

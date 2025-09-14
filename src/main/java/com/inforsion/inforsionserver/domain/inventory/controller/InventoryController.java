@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.cache.spi.support.AbstractReadWriteAccess;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,6 +17,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Tag(name = "Inventory", description = "매장 재고 관리 API - 재고 내역 관리")
@@ -104,4 +107,15 @@ public class InventoryController {
     }
 
 
+    @Operation(
+            summary = "유통기한 임박 알림",
+            description = "유통기한 임박한 재고를 알려줍니다."
+    )
+    @ApiResponses(value = {
+
+    })
+    @GetMapping("/expiringAlert")
+    public List<InventoryDto> getExpiringItems(int targetDate){
+        return inventoryService.getExpiringItems(targetDate);
+    }
 }
