@@ -25,7 +25,7 @@ public class RecipesEntity {
     private BigDecimal amountPerMenu;
 
     @Column(name = "unit")
-    private String unit; // 단위
+    private String unit;
 
     @Column(name = "is_active")
     private Boolean isActive;
@@ -36,7 +36,14 @@ public class RecipesEntity {
     @Column(name = "update_at")
     private Timestamp updateAt;
 
+    @JoinColumn(name = "category_id")
+    private String category;
+
+    @Column(name = "views")
+    private String views; // 조회수
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
+
 }

@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import lombok.AllArgsConstructor;
@@ -17,5 +18,5 @@ public interface InventoryRepositoryCustom {
     Page<InventoryEntity> findInventories(Integer storeId, Pageable pageable);
     Long updateInventory(Integer inventoryId, InventoryDto inventoryDto);
     Long deleteInventory(Integer inventoryId);
-    List<InventoryEntity> findItemsExpiringBefore(LocalDate targetDate);
+    List<ExpiringInventoryDto> findItemsExpiringBefore(Integer days);
 }

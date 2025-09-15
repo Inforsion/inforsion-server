@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.inventory.service;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -81,8 +81,7 @@ public class InventoryService {
 
     // 유통기한 임박 알림
     @Transactional
-    public List<InventoryDto> getExpiringItems(int days){
-        LocalDate targetDate = LocalDate.now().plusDays(days);
-        return InventoryRepository.findItemsExpiringBefore(targetDate);
+    public List<ExpiringInventoryDto> getExpiringItems(Integer days){
+        return inventoryRepository.findItemsExpiringBefore(days);
     }
 }

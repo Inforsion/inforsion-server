@@ -23,14 +23,4 @@ public class RecipesRequestDto {
     private Boolean isActive;
     private Timestamp createdAt;
     private Timestamp updateAt;
-
-
-    public static RecipesRequestDto fromEntity(RecipesEntity entity) {
-        return RecipesRequestDto.builder()
-                .id(entity.getId())
-                .amountPerMenu(entity.getAmountPerMenu())
-                .unit(entity.getUnit())
-                .build();
-
-    }
 }

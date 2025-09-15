@@ -1,20 +1,18 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
-import com.inforsion.inforsionserver.domain.inventory.service.InventoryService;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +23,6 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     
     private final JPAQueryFactory queryFactory;
     private final QInventoryEntity t = QInventoryEntity.inventoryEntity;
-    private final InventoryService inventoryService;
 
     // 전체 재고 조회 - 페이징 처리: 이름, 현재 재료량, 유통기한, 최근 입고 순 정렬 가능
     @Override
@@ -96,12 +93,20 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .execute();
     }
 
-    // 유통기한
+    // 유통기한 임박
     @Override
-    public List<InventoryDto> findItemsExpiringBefore(LocalDate targetDate){
+    public List<ExpiringInventoryDto> findItemsExpiringBefore(Integer days){
+        LocalDateTime targetDate = LocalDateTime.now().plusDays(days);
+
         return queryFactory
-                .selectFrom(t)
-                .where(t.expiryDate.before(targetDate))
+                .select(Projections.constructor(
+                        ExpiringInventoryDto.class,
+                        t.id,
+                        t.name,
+                        t.expiryDate
+                ))
+                .from(t)
+                .where(t.expiryDate.loe(targetDate))
                 .fetch();
     }
 }
