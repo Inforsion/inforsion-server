@@ -121,5 +121,4 @@ public class RecipesController {
         RecipesResponseDto created = recipesService.createRecipes(recipesRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-
 }

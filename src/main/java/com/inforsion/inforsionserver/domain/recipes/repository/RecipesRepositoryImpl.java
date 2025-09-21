@@ -7,7 +7,6 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -57,8 +56,6 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom{
                     switch (sort.getProperty()){
                         case "name":
                             return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.name);
-                        case "category":
-                            return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.category);
                         case "createdAt":
                             return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.createdAt);
                         case "views":
@@ -92,4 +89,5 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom{
                 .where(t.id.eq(recipesId))
                 .execute();
     }
+
 }

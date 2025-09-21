@@ -1,8 +1,7 @@
 package com.inforsion.inforsionserver.domain.recipes.Dto.request;
 
 
-import com.inforsion.inforsionserver.domain.recipes.Dto.response.RecipesResponseDto;
-import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,4 +22,7 @@ public class RecipesRequestDto {
     private Boolean isActive;
     private Timestamp createdAt;
     private Timestamp updateAt;
+
+    @NotNull
+    private Integer recipesCategoryId;
 }

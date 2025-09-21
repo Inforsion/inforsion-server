@@ -36,9 +36,6 @@ public class RecipesEntity {
     @Column(name = "update_at")
     private Timestamp updateAt;
 
-    @JoinColumn(name = "category_id")
-    private String category;
-
     @Column(name = "views")
     private String views; // 조회수
 
