@@ -56,6 +56,10 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom{
                     switch (sort.getProperty()){
                         case "name":
                             return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.name);
+                        case "createdAt":
+                            return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.createdAt);
+                        case "views":
+                            return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.views);
                         default:
                             return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)recipes.id);
                     }
@@ -85,4 +89,5 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom{
                 .where(t.id.eq(recipesId))
                 .execute();
     }
+
 }

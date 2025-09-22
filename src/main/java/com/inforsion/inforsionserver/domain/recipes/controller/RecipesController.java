@@ -2,6 +2,7 @@ package com.inforsion.inforsionserver.domain.recipes.controller;
 
 import com.inforsion.inforsionserver.domain.recipes.Dto.request.RecipesRequestDto;
 import com.inforsion.inforsionserver.domain.recipes.Dto.response.RecipesResponseDto;
+import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
 import com.inforsion.inforsionserver.domain.recipes.service.RecipesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,7 +29,7 @@ public class RecipesController {
 
     // 레시피 조회
     @Operation(
-            summary = "레시피 조회",
+            summary = "레시피 목록 조회",
             description = "레시피를 조회하기 위해 사용됩니다."
     )
     @ApiResponses(value = {
@@ -45,6 +46,23 @@ public class RecipesController {
         Page<RecipesResponseDto> response = recipesService.findRecipes(storeId, pageable);
         return ResponseEntity.ok(response);
     }
+
+    // 레시피 상세 조회, 재료도 같이 조회 가능해야함
+    @Operation(
+            summary = "레시피 상세 조회",
+            description = "레시피를 상세 조회하기 위해 사용됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "레시피 상세 조회 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/{recipeId}")
+    public ResponseEntity<RecipesResponseDto> getRecipeDetail(@PathVariable("recipeId") Integer recipeId){
+        RecipesEntity entity = recipesService.getRecipeDetail(recipeId);
+        return ResponseEntity.ok(RecipesResponseDto.fromEntity(entity));
+    }
+
 
     @Operation(
             summary = "레시피 수정",
@@ -103,5 +121,4 @@ public class RecipesController {
         RecipesResponseDto created = recipesService.createRecipes(recipesRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-
 }

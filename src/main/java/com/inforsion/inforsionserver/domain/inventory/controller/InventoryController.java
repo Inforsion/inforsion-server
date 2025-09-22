@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.inventory.controller;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,10 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Tag(name = "Inventory", description = "매장 재고 관리 API - 재고 내역 관리")
@@ -104,4 +109,24 @@ public class InventoryController {
     }
 
 
+    @Operation(
+            summary = "유통기한 임박 알림",
+            description = "유통기한 임박한 재고를 알려줍니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "유통기한 임박 알림 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/expiring")
+    public Map<Integer, List<ExpiringInventoryDto>> getExpiringItems(
+            @RequestParam List<Integer>days
+    ){
+        Map<Integer, List<ExpiringInventoryDto>> result = new HashMap<>();
+
+        for(Integer d: days){
+            result.put(d, inventoryService.getExpiringItems(d));
+        }
+        return result;
+    }
 }

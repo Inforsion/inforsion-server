@@ -1,17 +1,19 @@
 package com.inforsion.inforsionserver.domain.inventory.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,5 +91,22 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .delete(t)
                 .where(t.id.eq(inventoryId))
                 .execute();
+    }
+
+    // 유통기한 임박
+    @Override
+    public List<ExpiringInventoryDto> findItemsExpiringBefore(Integer days){
+        LocalDateTime targetDate = LocalDateTime.now().plusDays(days);
+
+        return queryFactory
+                .select(Projections.constructor(
+                        ExpiringInventoryDto.class,
+                        t.id,
+                        t.name,
+                        t.expiryDate
+                ))
+                .from(t)
+                .where(t.expiryDate.loe(targetDate))
+                .fetch();
     }
 }

@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.inventory.service;
 
+import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
 import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -71,8 +74,14 @@ public class InventoryService {
     @Transactional
     public void deleteInventory(Integer inventoryId) {
         InventoryEntity entity = inventoryRepository.findById(inventoryId)
-                .orElseThrow(()->new IllegalArgumentException("Id" + inventoryId + "에 해당하는 재고가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("Id" + inventoryId + "에 해당하는 재고가 없습니다."));
 
         inventoryRepository.delete(entity);
+    }
+
+    // 유통기한 임박 알림
+    @Transactional
+    public List<ExpiringInventoryDto> getExpiringItems(Integer days){
+        return inventoryRepository.findItemsExpiringBefore(days);
     }
 }

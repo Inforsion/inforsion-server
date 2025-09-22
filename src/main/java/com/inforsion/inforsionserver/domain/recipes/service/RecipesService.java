@@ -37,11 +37,18 @@ public class RecipesService {
         return RecipesResponseDto.fromEntity(saved);
     }
 
-    // 조회
+    // 전체 페이징 조회
     @Transactional(readOnly = true)
     public Page<RecipesResponseDto> findRecipes(Integer storeId, Pageable pageable){
         Page<RecipesEntity> recipes = recipesRepository.findAllByStoreId(storeId, pageable);
         return recipes.map(RecipesResponseDto::fromEntity);
+    }
+
+    // 상세 조회
+    @Transactional
+    public RecipesEntity getRecipeDetail(Integer recipeId){
+        return recipesRepository.findById(recipeId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 레시피가 존재하지 않습니다."));
     }
 
     @Transactional

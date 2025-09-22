@@ -1,8 +1,7 @@
 package com.inforsion.inforsionserver.domain.recipes.Dto.request;
 
 
-import com.inforsion.inforsionserver.domain.recipes.Dto.response.RecipesResponseDto;
-import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,13 +23,6 @@ public class RecipesRequestDto {
     private Timestamp createdAt;
     private Timestamp updateAt;
 
-
-    public static RecipesRequestDto fromEntity(RecipesEntity entity) {
-        return RecipesRequestDto.builder()
-                .id(entity.getId())
-                .amountPerMenu(entity.getAmountPerMenu())
-                .unit(entity.getUnit())
-                .build();
-
-    }
+    @NotNull
+    private Integer recipesCategoryId;
 }

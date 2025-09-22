@@ -36,7 +36,11 @@ public class RecipesEntity {
     @Column(name = "update_at")
     private Timestamp updateAt;
 
+    @Column(name = "views")
+    private String views; // 조회수
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
+
 }
