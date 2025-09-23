@@ -103,6 +103,8 @@ public class OrderService {
 
         TransactionConditionDto condition = new TransactionConditionDto();
         condition.setStoreId(order.getStore().getId());
+        condition.setStoreId(order.getTransaction().getStore().getId());
+
         condition.setStartDate(LocalDate.now().minusDays(SALES_DAYS));
         condition.setEndDate(LocalDate.now());
 
