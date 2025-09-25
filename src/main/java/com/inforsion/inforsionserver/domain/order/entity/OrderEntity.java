@@ -1,15 +1,16 @@
 package com.inforsion.inforsionserver.domain.order.entity;
 
+import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
+import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity;
 import com.inforsion.inforsionserver.global.enums.OrderStatus;
+import com.inforsion.inforsionserver.global.enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
-import com.inforsion.inforsionserver.global.enums.PaymentMethod;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -45,4 +46,20 @@ public class OrderEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "menu_id", nullable = false)
+    private ProductEntity menu; // 메뉴
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transaction_id", nullable = false)
+    private TransactionEntity transaction; // 거래
+
+
+    @Column(name = "unit_price", precision = 10, scale = 2)
+    private BigDecimal unitPrice; // 단가
+
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice; // 총 가격
+
 }

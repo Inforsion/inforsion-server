@@ -1,12 +1,14 @@
 package com.inforsion.inforsionserver.domain.inventory.entity;
 
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
+import com.inforsion.inforsionserver.global.enums.StockStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,12 +42,16 @@ public class InventoryEntity {
     @Column(name = "unit_cost", nullable = false, length = 20)
     private BigDecimal unitCost; // 단위 당 가격
 
-    @Column(name = "expiry_date")
-    private LocalDateTime expiryDate; // 유통기한
+    @Column(name = "last_restocked_date")
+    private LocalDate lastRestockedDate; // 마지막 입고일
 
-    @UpdateTimestamp
-    @Column(name = "last_restocked_date", nullable = false)
-    private LocalDateTime lastRestockedDate; // 마지막 입고일
+    @Column(name = "expiry_date", nullable = false)
+    private LocalDate expiryDate; // 유통기한
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "stock_status", nullable = false)
+    private StockStatus stockStatus = StockStatus.SUFFICIENT; // 재고 상태
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

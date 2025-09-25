@@ -7,6 +7,7 @@ import lombok.*;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "재고 Dto")
@@ -30,9 +31,9 @@ public class InventoryDto {
 
     private BigDecimal unitCost; // 단위 당 가격
 
-    private LocalDateTime expiryDate; // 유통기한
+    private LocalDate expiryDate; // 유통기한
 
-    private LocalDateTime lastRestockedDate; // 마지막 입고일
+    private LocalDate lastRestockedDate; // 마지막 입고일
 
     private LocalDateTime createdAt; // 생성일
 

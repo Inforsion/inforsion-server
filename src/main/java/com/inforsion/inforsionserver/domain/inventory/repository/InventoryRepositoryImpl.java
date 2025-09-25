@@ -13,7 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,7 +97,7 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     // 유통기한 임박
     @Override
     public List<ExpiringInventoryDto> findItemsExpiringBefore(Integer days){
-        LocalDateTime targetDate = LocalDateTime.now().plusDays(days);
+        LocalDate targetDate = LocalDate.now().plusDays(days);
 
         return queryFactory
                 .select(Projections.constructor(

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 // 유통기한 임박 재고 조회용
@@ -18,7 +19,7 @@ public class ExpiringInventoryDto {
     private Integer id;
     private String name;
     private BigDecimal currentStock;
-    private LocalDateTime expiryDate;
+    private LocalDate expiryDate;
 
     public static ExpiringInventoryDto fromEntity(InventoryEntity entity) {
         return new ExpiringInventoryDto(
