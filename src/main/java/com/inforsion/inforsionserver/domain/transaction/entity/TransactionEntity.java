@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.transaction.entity;
 
+import com.inforsion.inforsionserver.domain.order.entity.OrderEntity;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.global.enums.CostCategory;
 import com.inforsion.inforsionserver.global.enums.PaymentMethod;
@@ -20,7 +21,6 @@ import java.time.LocalDateTime;
 @Setter
 public class TransactionEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transaction_id")
     private Integer id; // 거래 조회를 위한 id
 
@@ -53,5 +53,9 @@ public class TransactionEntity {
 
     @Enumerated(EnumType.STRING)
     private CostCategory costCategory; // 원가 관련 카테고리
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private OrderEntity order;
 
 }

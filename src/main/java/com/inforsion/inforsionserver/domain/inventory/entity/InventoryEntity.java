@@ -21,8 +21,7 @@ import java.time.LocalDateTime;
 public class InventoryEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "inventory_id")
+    @Column(name = "ingredient_id")
     private Integer id;
 
     @Column(name = "ingredient_name", nullable = false, length = 100)

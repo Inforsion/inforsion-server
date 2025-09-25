@@ -66,7 +66,6 @@ public class IngredientEntity {
         if (description != null) this.description = description;
     }
 
-
     /**
      * 활성화 상태 업데이트
      */
