@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.transaction.entity;
 
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
+import com.inforsion.inforsionserver.domain.order.entity.OrderEntity;
 import com.inforsion.inforsionserver.global.enums.CostCategory;
 import com.inforsion.inforsionserver.global.enums.PaymentMethod;
 import com.inforsion.inforsionserver.global.enums.TransactionCategory;
@@ -10,6 +11,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "transactions")
@@ -53,5 +55,8 @@ public class TransactionEntity {
 
     @Enumerated(EnumType.STRING)
     private CostCategory costCategory; // 원가 관련 카테고리
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderEntity> orders; // 이 거래에 포함된 주문들
 
 }

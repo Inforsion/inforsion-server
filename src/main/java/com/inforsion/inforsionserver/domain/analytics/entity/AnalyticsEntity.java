@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ingredients")
+@Table(name = "analytics")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,7 +22,6 @@ public class AnalyticsEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "analystic_id")
     private Integer analyticsId;
 
     @ManyToOne(fetch = FetchType.LAZY)

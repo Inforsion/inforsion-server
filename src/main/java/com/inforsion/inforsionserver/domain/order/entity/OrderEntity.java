@@ -4,19 +4,25 @@ import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity;
 import com.inforsion.inforsionserver.global.enums.OrderStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "orders", indexes =  {
+        @Index(name = "idx_orders_order_id", columnList = "order_id"),
         @Index(name = "idx_orders_created_at", columnList = "created_at"),
-        @Index(name = "idx_orders_status", columnList = "order_status")
+        @Index(name = "idx_orders_status", columnList = "order_status"),
+        @Index(name = "idx_orders_transaction_id", columnList = "transaction_id"),
+        @Index(name = "idx_orders_menu_id", columnList = "menu_id")
 })
 public class OrderEntity {
 
@@ -45,4 +51,12 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus; // 주문 상태 (취소, 완료, 진행)
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

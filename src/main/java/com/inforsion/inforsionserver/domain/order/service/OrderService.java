@@ -31,7 +31,7 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
 
-        List<TransactionEntity> transactions = transactionRepository.findAllByOrderId(orderId);
+        List<TransactionEntity> transactions = transactionRepository.findAllByOrdersId(orderId);
         transactionRepository.deleteAll(transactions);
 
         TransactionConditionDto condition = new TransactionConditionDto();

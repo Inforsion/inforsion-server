@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 public class OrderItemEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_items_id")
     private Integer id;
 
     @Column(name = "order_no", nullable = false)
