@@ -9,6 +9,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface InventoryRepository extends JpaRepository<InventoryEntity, Integer>, QuerydslPredicateExecutor<InventoryEntity>, InventoryRepositoryCustom {
-
+public interface InventoryRepository extends JpaRepository<InventoryEntity, Integer>,
+        QuerydslPredicateExecutor<InventoryEntity>, InventoryRepositoryCustom {
 }
