@@ -11,7 +11,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inventory_logs")
+@Table(name = "inventory_logs", indexes = {
+        @Index(name = "idx_inventory_logs_created_at", columnList = "created_at"),
+        @Index(name = "idx_inventory_logs_log_type", columnList = "log_type"),
+        @Index(name = "idx_inventory_logs_inventory_id", columnList = "inventory_id"),
+        @Index(name = "idx_inventory_logs_order_id", columnList = "order_id"),
+        @Index(name = "idx_inventory_logs_ocr_id", columnList = "ocr_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
