@@ -9,8 +9,11 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -34,7 +37,7 @@ public class OrderEntity {
     @Column(name = "total_amount")
     private BigDecimal total_amount; // 총액
 
-    @Column(name = "order_quantity")
+    @Column(name = "quantity")
     private Integer quantity; // 주문량
 
     @Enumerated(EnumType.STRING)
@@ -55,11 +58,21 @@ public class OrderEntity {
     @JoinColumn(name = "transaction_id", nullable = false)
     private TransactionEntity transaction; // 거래
 
-
     @Column(name = "unit_price", precision = 10, scale = 2)
     private BigDecimal unitPrice; // 단가
 
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice; // 총 가격
 
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt; // 생성일
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt; // 수정일
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private ProductEntity product;
 }

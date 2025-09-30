@@ -9,7 +9,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "ingredients",
@@ -34,7 +33,6 @@ public class IngredientEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
 
     @Column(name = "is_active")
     @Builder.Default

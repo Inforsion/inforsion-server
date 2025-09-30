@@ -85,10 +85,10 @@ INSERT IGNORE INTO products (store_id, name, price, category, description, in_st
 (3, '헤이즐넛라떼', 6200.00, '커피', '헤이즐넛시럽이 들어간 고급 라떼', true, NOW(), NOW());
 
 -- 5. 레시피 데이터 (메뉴별 재료 구성)
--- RecipeEntity 테이블: receipies
+-- RecipeEntity 테이블: recipes
 -- 각 메뉴를 만들기 위해 필요한 재료와 분량
 -- amount_per_menu: 메뉴 1개 당 필요한 재료량
-INSERT IGNORE INTO receipies (menu_id, inventory_id, amount_per_menu, unit, is_active, created_at, updated_at) VALUES
+INSERT IGNORE INTO recipes (menu_id, inventory_id, amount_per_menu, unit, is_active, created_at, updated_at) VALUES
 -- 에티오피아 드립커피 레시피
 (1, 1, 0.025, 'kg', true, NOW(), NOW()), -- 에티오피아 원두 25g
 (1, 7, 1.0, '개', true, NOW(), NOW()),   -- S컵 1개
