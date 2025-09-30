@@ -34,6 +34,7 @@ dependencies {
     
     // Database
     implementation 'mysql:mysql-connector-java:8.0.33' // MySQL JDBC 드라이버
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis support
     
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
