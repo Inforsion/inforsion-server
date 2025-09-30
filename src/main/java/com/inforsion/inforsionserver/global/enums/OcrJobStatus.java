@@ -1,4 +1,4 @@
-package com.inforsion.inforsionserver.domain.ocr.dto;
+package com.inforsion.inforsionserver.global.enums;
 
 public enum OcrJobStatus {
     PENDING("대기 중"),

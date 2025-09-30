@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrConfirmationRequestDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobResponseDto;
-import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobStatus;
+import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrProcessingRequestDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.ProductMatchingResultDto;
 import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrRawDataEntity;
@@ -16,7 +16,6 @@ import com.inforsion.inforsionserver.domain.ocr.mysql.repository.OcrResultReposi
 import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
-import com.inforsion.inforsionserver.domain.recipe.entity.RecipeEntity;
 import com.inforsion.inforsionserver.domain.recipe.repository.RecipeRepository;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
@@ -29,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -354,6 +352,31 @@ public class OcrProcessingService {
     public OcrRawDataEntity getRawData(Integer rawDataId) {
         return ocrRawDataRepository.findByRawDataId(rawDataId)
                 .orElseThrow(() -> new IllegalArgumentException("원본 OCR 데이터를 찾을 수 없습니다: " + rawDataId));
+    }
+
+    /**
+     * OCR 로우 데이터 상세 조회 (로그 확인용)
+     */
+    public OcrRawDataEntity getRawDataDetail(Integer rawDataId) {
+        OcrRawDataEntity rawData = ocrRawDataRepository.findByRawDataId(rawDataId)
+                .orElseThrow(() -> new IllegalArgumentException("원본 OCR 데이터를 찾을 수 없습니다: " + rawDataId));
+
+        log.info("========== OCR 로우 데이터 조회 ==========");
+        log.info("Raw Data ID: {}", rawData.getRawDataId());
+        log.info("MongoDB ID: {}", rawData.getId());
+        log.info("Store ID: {}", rawData.getStoreId());
+        log.info("Document Type: {}", rawData.getDocumentType());
+        log.info("Supplier Name: {}", rawData.getSupplierName());
+        log.info("Document Date: {}", rawData.getDocumentDate());
+        log.info("Created At: {}", rawData.getCreatedAt());
+        log.info("Raw OCR Text Length: {} characters", rawData.getRawOcrText() != null ? rawData.getRawOcrText().length() : 0);
+        log.info("========== Raw OCR Text ==========");
+        log.info("\n{}", rawData.getRawOcrText());
+        log.info("========== Parsed Items JSON ==========");
+        log.info("{}", rawData.getParsedItem());
+        log.info("==========================================");
+
+        return rawData;
     }
 
     /**
