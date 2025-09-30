@@ -19,8 +19,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class AnalyticsEntity {
-
     @Id
+    @Column(name = "analytics_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer analyticsId;
 
@@ -28,7 +28,7 @@ public class AnalyticsEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
 
-    @Column(name = "analysis_date")
+    @Column(name = "date")
     private LocalDate analysisDate;
 
     @Enumerated(EnumType.STRING)
@@ -69,4 +69,19 @@ public class AnalyticsEntity {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "total_sales", precision = 10, scale = 2)
+    private BigDecimal totalSales;
+
+    @Column(name = "total_orders")
+    private Integer totalOrders;
+
+    @Column(name = "top_selling_product_id")
+    private Integer topSellingProductId;
+
+    @Column(name = "total_customers")
+    private Integer totalCustomers;
+
+    @Column(name = "average_order_value", precision = 10, scale = 2)
+    private BigDecimal averageOrderValue;
 }
