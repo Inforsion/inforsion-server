@@ -286,18 +286,18 @@ public class OcrProcessingService {
             // MongoDB에서 원본 데이터 조회
             OcrRawDataEntity rawData = ocrRawDataRepository.findByRawDataId(confirmationDto.getRawDataId())
                     .orElseThrow(() -> new IllegalArgumentException("원본 OCR 데이터를 찾을 수 없습니다: " + confirmationDto.getRawDataId()));
-            
+
             StoreEntity store = storeRepository.findById(rawData.getStoreId())
                     .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다: " + rawData.getStoreId()));
-            
+
             // 각 확정된 아이템을 MySQL에 저장하고 재고 업데이트
             for (OcrConfirmationRequestDto.ConfirmedItemDto confirmedItem : confirmationDto.getConfirmedItems()) {
                 saveOcrResultToMySQL(rawData, store, confirmedItem);
             }
-            
-            log.info("OCR 결과 확정 완료: rawDataId={}, 아이템 수={}", 
-                    confirmationDto.getRawDataId(), confirmationDto.getConfirmedItems().size());
-                    
+
+            log.info("OCR 결과 확정 완료: rawDataId={}, 문서 타입={}, 아이템 수={}",
+                    confirmationDto.getRawDataId(), rawData.getDocumentType(), confirmationDto.getConfirmedItems().size());
+
         } catch (Exception e) {
             log.error("OCR 결과 확정 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("OCR 결과 확정에 실패했습니다.", e);
@@ -307,26 +307,30 @@ public class OcrProcessingService {
     /**
      * 확정된 OCR 결과를 MySQL에 저장
      */
-    private void saveOcrResultToMySQL(OcrRawDataEntity rawData, StoreEntity store, 
+    private void saveOcrResultToMySQL(OcrRawDataEntity rawData, StoreEntity store,
                                      OcrConfirmationRequestDto.ConfirmedItemDto confirmedItem) {
-        
+
         // 선택된 제품 정보 조회
         ProductEntity selectedProduct = productRepository.findById(confirmedItem.getSelectedProductId())
                 .orElseThrow(() -> new IllegalArgumentException("선택된 제품을 찾을 수 없습니다: " + confirmedItem.getSelectedProductId()));
-        
+
         // 매치 방법 결정 (사용자가 수정했는지 여부에 따라)
-        MatchMethod matchMethod = (confirmedItem.getCorrectedItemName() != null && 
-                                 !confirmedItem.getCorrectedItemName().equals(confirmedItem.getOcrItemName())) 
+        MatchMethod matchMethod = (confirmedItem.getCorrectedItemName() != null &&
+                                 !confirmedItem.getCorrectedItemName().equals(confirmedItem.getOcrItemName()))
                                  ? MatchMethod.MANUAL : MatchMethod.AUTO;
-        
-        // 매치 타입 결정 (제품 매칭이므로 Menu)
-        MatchType matchType = MatchType.MENU;
-        
+
+        // DocumentType에 따라 매치 타입 결정
+        // SALES_RECEIPT(판매 영수증) → Menu (제품 판매, 재고 차감)
+        // SUPPLY_INVOICE(공급 송장) → Inventory (원재료 입고, 재고 증가)
+        MatchType matchType = rawData.getDocumentType().name().equals("SALES_RECEIPT")
+                             ? MatchType.MENU
+                             : MatchType.INVENTORY;
+
         // OCR 결과 엔티티 생성
         OcrResultEntity ocrResult = OcrResultEntity.builder()
                 .store(store)
                 .rawDataId(rawData.getRawDataId())
-                .ocrItemName(confirmedItem.getCorrectedItemName() != null ? 
+                .ocrItemName(confirmedItem.getCorrectedItemName() != null ?
                            confirmedItem.getCorrectedItemName() : confirmedItem.getOcrItemName())
                 .quantity(confirmedItem.getQuantity())
                 .price(confirmedItem.getPrice())
@@ -335,15 +339,22 @@ public class OcrProcessingService {
                 .totalAmount(BigDecimal.valueOf(confirmedItem.getTotalAmount()))
                 .matchMethod(matchMethod)
                 .build();
-        
+
         // MySQL에 저장
         OcrResultEntity savedResult = ocrResultRepository.save(ocrResult);
-        
-        // 재고 업데이트
-        inventoryUpdateService.updateInventoryFromOcr(savedResult);
-        
-        log.info("OCR 결과 MySQL 저장 완료: {}, 제품: {}, 수량: {}", 
-                savedResult.getOcrId(), selectedProduct.getName(), confirmedItem.getQuantity());
+
+        // DocumentType에 따라 재고 업데이트 방식 결정
+        if (rawData.getDocumentType().name().equals("SALES_RECEIPT")) {
+            // 판매 영수증 → 재고 차감
+            inventoryUpdateService.updateInventoryFromOcr(savedResult);
+            log.info("OCR 영수증 처리 완료 (재고 차감): {}, 제품: {}, 수량: {}",
+                    savedResult.getOcrId(), selectedProduct.getName(), confirmedItem.getQuantity());
+        } else {
+            // 공급 송장 → 재고 증가
+            inventoryUpdateService.restockInventoryFromOcr(savedResult);
+            log.info("OCR 송장 처리 완료 (재고 증가): {}, 제품: {}, 수량: {}",
+                    savedResult.getOcrId(), selectedProduct.getName(), confirmedItem.getQuantity());
+        }
     }
 
     /**
