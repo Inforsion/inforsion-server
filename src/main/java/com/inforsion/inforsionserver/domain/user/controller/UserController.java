@@ -42,13 +42,14 @@ public class UserController {
 
     /**
      * 사용자명으로 사용자 조회 (Redis 캐싱)
-     */
+
     @GetMapping("/username/{username}")
     @Operation(summary = "사용자 조회 (사용자명)", description = "사용자명으로 사용자 정보를 조회합니다 (Redis 캐싱)")
     public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) {
         UserResponseDto response = userService.getUserByUsername(username);
         return ResponseEntity.ok(response);
     }
+    */
 
     /**
      * 전체 사용자 목록 조회

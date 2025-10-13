@@ -48,7 +48,7 @@ public class UserService {
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
                 .password(encodedPassword)
-                .name(requestDto.getName())
+                //.name(requestDto.getName())
                 .build();
 
         UserEntity savedUser = userRepository.save(user);
@@ -86,7 +86,7 @@ public class UserService {
     /**
      * 사용자명으로 사용자 조회 (Redis 캐싱)
      * 캐시 키: "user::username:{username}"
-     */
+
     @Cacheable(value = "user", key = "'username:' + #username")
     public UserResponseDto getUserByUsername(String username) {
         log.info("DB에서 사용자 조회: username={}", username);
@@ -95,6 +95,7 @@ public class UserService {
 
         return UserResponseDto.from(user);
     }
+    */
 
     /**
      * 전체 사용자 목록 조회
@@ -111,7 +112,6 @@ public class UserService {
     /**
      * 사용자 정보 수정 (Redis 캐시 갱신)
      * @CachePut: 메서드를 실행하고 결과를 캐시에 저장
-     */
     @Transactional
     @CachePut(value = "user", key = "#userId")
     public UserResponseDto updateUser(Integer userId, UserUpdateRequestDto requestDto) {
@@ -123,6 +123,7 @@ public class UserService {
         log.info("사용자 정보 수정 완료: userId={}", userId);
         return UserResponseDto.from(user);
     }
+    */
 
     /**
      * 마지막 로그인 시간 업데이트 (Redis 캐시 갱신)
