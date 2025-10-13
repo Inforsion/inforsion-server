@@ -1,8 +1,11 @@
 package com.inforsion.inforsionserver.domain.auth.service;
 
-import com.inforsion.inforsionserver.domain.user.dto.request.LoginRequestDto;
-import com.inforsion.inforsionserver.domain.user.dto.response.LoginResponseDto;
-import com.inforsion.inforsionserver.domain.user.dto.response.TokenResponseDto;
+import com.inforsion.inforsionserver.domain.auth.dto.request.LoginRequestDto;
+import com.inforsion.inforsionserver.domain.auth.dto.response.LoginResponseDto;
+import com.inforsion.inforsionserver.domain.auth.dto.response.TokenResponseDto;
+import com.inforsion.inforsionserver.domain.auth.exception.InvalidCredentialsException;
+import com.inforsion.inforsionserver.domain.auth.exception.InvalidRefreshTokenException;
+import com.inforsion.inforsionserver.domain.auth.exception.TokenValidationException;
 import com.inforsion.inforsionserver.domain.user.dto.response.UserResponseDto;
 import com.inforsion.inforsionserver.domain.user.entity.UserEntity;
 import com.inforsion.inforsionserver.domain.user.repository.UserRepository;
@@ -10,6 +13,7 @@ import com.inforsion.inforsionserver.global.jwt.JwtTokenProvider;
 import com.inforsion.inforsionserver.global.jwt.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
+    private static final String MDC_USER_ID = "userId";
+    private static final String MDC_USER_EMAIL = "userEmail";
 
     /**
      * 로그인
@@ -40,36 +46,42 @@ public class AuthService {
      */
     @Transactional
     public LoginResponseDto login(LoginRequestDto requestDto) {
-        // 사용자 조회
-        UserEntity user = userRepository.findByEmail(requestDto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다"));
+        MDC.put(MDC_USER_EMAIL, requestDto.getEmail());
+        log.debug("로그인 시도: email={}", requestDto.getEmail());
 
-        // 비밀번호 검증
-        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다");
+        try {
+            UserEntity user = userRepository.findByEmail(requestDto.getEmail())
+                    .orElseThrow(() -> {
+                        log.warn("존재하지 않는 이메일 로그인 시도: {}", requestDto.getEmail());
+                        return new InvalidCredentialsException();
+                    });
+
+            if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+                log.warn("잘못된 비밀번호 입력: userId={}", user.getId());
+                throw new InvalidCredentialsException();
+            }
+
+            MDC.put(MDC_USER_ID, user.getId().toString());
+
+            String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+            String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+            tokenService.saveRefreshToken(user.getId(), refreshToken);
+            user.updateLastLoginAt();
+
+            log.info("로그인 성공: userId={}", user.getId());
+
+            UserResponseDto userDto = UserResponseDto.from(user);
+            TokenResponseDto tokenDto = TokenResponseDto.of(
+                    accessToken,
+                    refreshToken,
+                    jwtTokenProvider.getExpirationTime(accessToken)
+            );
+
+            return LoginResponseDto.of(userDto, tokenDto);
+        } finally {
+            MDC.remove(MDC_USER_ID);
+            MDC.remove(MDC_USER_EMAIL);
         }
-
-        // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        // Refresh Token을 Redis에 저장
-        tokenService.saveRefreshToken(user.getId(), refreshToken);
-
-        // 마지막 로그인 시간 업데이트
-        user.updateLastLoginAt();
-
-        log.info("로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
-
-        // 응답 생성
-        UserResponseDto userDto = UserResponseDto.from(user);
-        TokenResponseDto tokenDto = TokenResponseDto.of(
-                accessToken,
-                refreshToken,
-                jwtTokenProvider.getExpirationTime(accessToken)
-        );
-
-        return LoginResponseDto.of(userDto, tokenDto);
     }
 
     /**
@@ -79,13 +91,16 @@ public class AuthService {
      */
     @Transactional
     public void logout(String accessToken, Integer userId) {
-        // Access Token 블랙리스트 추가
-        tokenService.addToBlacklist(accessToken);
+        MDC.put(MDC_USER_ID, String.valueOf(userId));
+        log.debug("로그아웃 요청 수신: userId={}", userId);
 
-        // Refresh Token 삭제
-        tokenService.deleteRefreshToken(userId);
-
-        log.info("로그아웃 완료: userId={}", userId);
+        try {
+            tokenService.addToBlacklist(accessToken);
+            tokenService.deleteRefreshToken(userId);
+            log.info("로그아웃 완료: userId={}", userId);
+        } finally {
+            MDC.remove(MDC_USER_ID);
+        }
     }
 
     /**
@@ -96,51 +111,56 @@ public class AuthService {
      */
     @Transactional
     public TokenResponseDto refreshToken(String refreshToken) {
-        // Refresh Token 유효성 검증
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다");
+            log.warn("만료되었거나 위조된 Refresh Token");
+            throw new InvalidRefreshTokenException();
         }
 
-        // 토큰에서 사용자 ID 추출
         Integer userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        MDC.put(MDC_USER_ID, String.valueOf(userId));
 
-        // Redis에 저장된 토큰과 비교
-        if (!tokenService.validateRefreshToken(userId, refreshToken)) {
-            throw new IllegalArgumentException("Refresh Token이 일치하지 않습니다");
+        try {
+            if (!tokenService.validateRefreshToken(userId, refreshToken)) {
+                log.warn("Redis에 저장된 Refresh Token과 불일치: userId={}", userId);
+                throw new InvalidRefreshTokenException();
+            }
+
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> {
+                        log.warn("토큰 갱신 중 사용자 미존재: userId={}", userId);
+                        return new InvalidRefreshTokenException("사용자를 찾을 수 없습니다.");
+                    });
+
+            String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+            String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+            tokenService.saveRefreshToken(user.getId(), newRefreshToken);
+
+            log.info("토큰 갱신 성공: userId={}", userId);
+
+            return TokenResponseDto.of(
+                    newAccessToken,
+                    newRefreshToken,
+                    jwtTokenProvider.getExpirationTime(newAccessToken)
+            );
+        } finally {
+            MDC.remove(MDC_USER_ID);
         }
-
-        // 사용자 정보 조회
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-
-        // 새로운 Access Token 생성
-        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-
-        // 새로운 Refresh Token 생성 (선택적 - 보안 강화)
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-        tokenService.saveRefreshToken(user.getId(), newRefreshToken);
-
-        log.info("토큰 갱신 완료: userId={}", userId);
-
-        return TokenResponseDto.of(
-                newAccessToken,
-                newRefreshToken,
-                jwtTokenProvider.getExpirationTime(newAccessToken)
-        );
     }
 
     /**
      * Access Token 검증 (블랙리스트 확인 포함)
      */
     public boolean validateAccessToken(String accessToken) {
-        // 블랙리스트 확인
         if (tokenService.isBlacklisted(accessToken)) {
             log.warn("블랙리스트에 있는 토큰입니다");
             return false;
         }
 
-        // JWT 토큰 유효성 검증
-        return jwtTokenProvider.validateToken(accessToken);
+        boolean valid = jwtTokenProvider.validateToken(accessToken);
+        if (!valid) {
+            log.warn("JWT 토큰 검증 실패");
+        }
+        return valid;
     }
 
     /**
@@ -148,13 +168,23 @@ public class AuthService {
      */
     public UserResponseDto getUserFromToken(String accessToken) {
         if (!validateAccessToken(accessToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Access Token입니다");
+            throw new TokenValidationException();
         }
 
         Integer userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+        MDC.put(MDC_USER_ID, String.valueOf(userId));
 
-        return UserResponseDto.from(user);
+        try {
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> {
+                        log.warn("토큰에서 얻은 사용자 ID가 존재하지 않음: {}", userId);
+                        return new TokenValidationException("사용자를 찾을 수 없습니다.");
+                    });
+
+            log.info("토큰 기반 사용자 조회 성공: userId={}", userId);
+            return UserResponseDto.from(user);
+        } finally {
+            MDC.remove(MDC_USER_ID);
+        }
     }
 }

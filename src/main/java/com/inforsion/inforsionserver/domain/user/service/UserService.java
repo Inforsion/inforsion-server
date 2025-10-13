@@ -1,7 +1,6 @@
 package com.inforsion.inforsionserver.domain.user.service;
 
 import com.inforsion.inforsionserver.domain.user.dto.request.UserCreateRequestDto;
-//import com.inforsion.inforsionserver.domain.user.dto.request.UserUpdateRequestDto;
 import com.inforsion.inforsionserver.domain.user.exception.UserDuplicateException;
 import com.inforsion.inforsionserver.domain.user.exception.UserNotFoundException;
 import org.slf4j.MDC;
@@ -88,19 +87,6 @@ public class UserService {
     }
 
     /**
-     * 이메일로 사용자 조회 (Redis 캐싱)
-     * 캐시 키: "user::email:{email}"
-     */
-    @Cacheable(value = "user", key = "'email:' + #email")
-    public UserResponseDto getUserByEmail(String email) {
-        log.info("DB에서 사용자 조회: email={}", email);
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
-
-        return UserResponseDto.from(user);
-    }
-
-    /**
      * 사용자명으로 사용자 조회 (Redis 캐싱)
      * 캐시 키: "user::username:{username}"
 
@@ -129,11 +115,13 @@ public class UserService {
     /**
      * 사용자 정보 수정 (Redis 캐시 갱신)
      * @CachePut: 메서드를 실행하고 결과를 캐시에 저장
+     */
+    /*
     @Transactional
     @CachePut(value = "user", key = "#userId")
     public UserResponseDto updateUser(Integer userId, UserUpdateRequestDto requestDto) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         user.updateProfile(requestDto.getName());
 

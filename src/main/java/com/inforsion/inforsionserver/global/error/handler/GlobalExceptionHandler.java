@@ -1,11 +1,14 @@
 package com.inforsion.inforsionserver.global.error.handler;
 
+import com.inforsion.inforsionserver.domain.auth.exception.InvalidCredentialsException;
+import com.inforsion.inforsionserver.domain.auth.exception.InvalidRefreshTokenException;
+import com.inforsion.inforsionserver.domain.auth.exception.TokenValidationException;
+import com.inforsion.inforsionserver.domain.user.exception.UserDuplicateException;
+import com.inforsion.inforsionserver.domain.user.exception.UserNotFoundException;
+import com.inforsion.inforsionserver.domain.user.exception.UserStateInvalidException;
 import com.inforsion.inforsionserver.global.error.code.ErrorCode;
 import com.inforsion.inforsionserver.global.error.dto.ErrorResponse;
 import com.inforsion.inforsionserver.global.error.exception.BusinessException;
-import com.inforsion.inforsionserver.domain.user.exception.UserNotFoundException;
-import com.inforsion.inforsionserver.domain.user.exception.UserDuplicateException;
-import com.inforsion.inforsionserver.domain.user.exception.UserStateInvalidException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -150,6 +153,36 @@ public class GlobalExceptionHandler {
         log.warn("MaxUploadSizeExceededException: {}", e.getMessage());
         final ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, "업로드 파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 인증 정보 불일치 예외 처리
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    protected ResponseEntity<ErrorResponse> handleInvalidCredentialsException(InvalidCredentialsException e) {
+        log.warn("InvalidCredentialsException: {}", e.getMessage());
+        ErrorResponse response = ErrorResponse.of(ErrorCode.AUTHENTICATION_FAILED, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Refresh Token 예외 처리
+     */
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    protected ResponseEntity<ErrorResponse> handleInvalidRefreshTokenException(InvalidRefreshTokenException e) {
+        log.warn("InvalidRefreshTokenException: {}", e.getMessage());
+        ErrorResponse response = ErrorResponse.of(ErrorCode.REFRESH_TOKEN_EXPIRED, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Access Token 검증 예외 처리
+     */
+    @ExceptionHandler(TokenValidationException.class)
+    protected ResponseEntity<ErrorResponse> handleTokenValidationException(TokenValidationException e) {
+        log.warn("TokenValidationException: {}", e.getMessage());
+        ErrorResponse response = ErrorResponse.of(ErrorCode.JWT_TOKEN_INVALID, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
     /**
      * 사용자 미존재 예외 처리
