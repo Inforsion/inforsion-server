@@ -1,7 +1,10 @@
 package com.inforsion.inforsionserver.domain.user.service;
 
 import com.inforsion.inforsionserver.domain.user.dto.request.UserCreateRequestDto;
-import com.inforsion.inforsionserver.domain.user.dto.request.UserUpdateRequestDto;
+//import com.inforsion.inforsionserver.domain.user.dto.request.UserUpdateRequestDto;
+import com.inforsion.inforsionserver.domain.user.exception.UserDuplicateException;
+import com.inforsion.inforsionserver.domain.user.exception.UserNotFoundException;
+import org.slf4j.MDC;
 import com.inforsion.inforsionserver.domain.user.dto.response.UserResponseDto;
 import com.inforsion.inforsionserver.domain.user.entity.UserEntity;
 import com.inforsion.inforsionserver.domain.user.repository.UserRepository;
@@ -25,36 +28,41 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final String MDC_USER_ID = "userId";
+    private static final String MDC_USER_EMAIL = "userEmail";
+
     /**
      * 사용자 생성
      * 비밀번호는 암호화하여 저장
      */
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto requestDto) {
-        // 이메일 중복 체크
-        if (userRepository.existsByEmail(requestDto.getEmail())) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + requestDto.getEmail());
+        MDC.put(MDC_USER_EMAIL, requestDto.getEmail());
+        log.debug("사용자 생성 요청 수신: email={}, username={}", requestDto.getEmail(), requestDto.getUsername());
+
+        try {
+            if (userRepository.existsByEmail(requestDto.getEmail())) {
+                log.warn("중복 이메일 감지: {}", requestDto.getEmail());
+                throw new UserDuplicateException("이미 사용 중인 이메일입니다: " + requestDto.getEmail());
+            }
+
+            String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
+
+            UserEntity user = UserEntity.builder()
+                    .username(requestDto.getUsername())
+                    .email(requestDto.getEmail())
+                    .password(encodedPassword)
+                    .build();
+
+            UserEntity savedUser = userRepository.save(user);
+            MDC.put(MDC_USER_ID, savedUser.getId().toString());
+            log.info("사용자 생성 완료");
+
+            return UserResponseDto.from(savedUser);
+        } finally {
+            MDC.remove(MDC_USER_ID);
+            MDC.remove(MDC_USER_EMAIL);
         }
-
-        // 사용자명 중복 체크
-        if (userRepository.existsByUsername(requestDto.getUsername())) {
-            throw new IllegalArgumentException("이미 존재하는 사용자명입니다: " + requestDto.getUsername());
-        }
-
-        // 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-
-        UserEntity user = UserEntity.builder()
-                .username(requestDto.getUsername())
-                .email(requestDto.getEmail())
-                .password(encodedPassword)
-                //.name(requestDto.getName())
-                .build();
-
-        UserEntity savedUser = userRepository.save(user);
-        log.info("사용자 생성 완료: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
-
-        return UserResponseDto.from(savedUser);
     }
 
     /**
@@ -63,11 +71,20 @@ public class UserService {
      */
     @Cacheable(value = "user", key = "#userId")
     public UserResponseDto getUserById(Integer userId) {
+        MDC.put(MDC_USER_ID, String.valueOf(userId));
         log.info("DB에서 사용자 조회: userId={}", userId);
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        try {
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> {
+                        log.warn("사용자를 찾을 수 없습니다. userId={}", userId);
+                        return new UserNotFoundException();
+                    });
 
-        return UserResponseDto.from(user);
+            log.info("사용자 조회 성공: userId={}", userId);
+            return UserResponseDto.from(user);
+        } finally {
+            MDC.remove(MDC_USER_ID);
+        }
     }
 
     /**
@@ -139,5 +156,4 @@ public class UserService {
         log.info("마지막 로그인 시간 업데이트: userId={}", userId);
         return UserResponseDto.from(user);
     }
-
 }

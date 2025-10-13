@@ -28,7 +28,7 @@ public class UserResponseDto implements Serializable {
                 .id(entity.getId())
                 .username(entity.getUsername())
                 .email(entity.getEmail())
-                .name(entity.getName())
+                //.name(entity.getName())
                 .lastLoginAt(entity.getLastLoginAt())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

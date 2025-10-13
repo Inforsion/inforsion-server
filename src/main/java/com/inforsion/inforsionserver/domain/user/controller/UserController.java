@@ -63,7 +63,6 @@ public class UserController {
 
     /**
      * 사용자 정보 수정 (Redis 캐시 갱신)
-     */
     @PutMapping("/{userId}")
     @Operation(summary = "사용자 정보 수정", description = "사용자 정보를 수정합니다 (Redis 캐시 갱신)")
     public ResponseEntity<UserResponseDto> updateUser(
@@ -72,5 +71,5 @@ public class UserController {
         UserResponseDto response = userService.updateUser(userId, requestDto);
         return ResponseEntity.ok(response);
     }
-
+    */
 }
