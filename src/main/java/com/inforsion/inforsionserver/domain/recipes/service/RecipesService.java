@@ -1,7 +1,11 @@
 package com.inforsion.inforsionserver.domain.recipes.service;
 
-import com.inforsion.inforsionserver.domain.recipes.Dto.request.RecipesRequestDto;
-import com.inforsion.inforsionserver.domain.recipes.Dto.response.RecipesResponseDto;
+import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
+import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
+import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
+import com.inforsion.inforsionserver.domain.recipes.dto.request.RecipesRequestDto;
+import com.inforsion.inforsionserver.domain.recipes.dto.response.RecipesResponseDto;
 import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
 import com.inforsion.inforsionserver.domain.recipes.repository.RecipesRepository;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
@@ -13,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,55 +25,89 @@ public class RecipesService {
 
     private final RecipesRepository recipesRepository;
     private final StoreRepository storeRepository;
+    private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
 
-
-    // 생성
     @Transactional
-    public RecipesResponseDto createRecipes(@Valid RecipesRequestDto recipesRequestDto){
-        StoreEntity store = storeRepository.findById(recipesRequestDto.getStoreId())
-                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+    public RecipesResponseDto createRecipes(@Valid RecipesRequestDto request) {
+        StoreEntity store = storeRepository.findById(request.getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다. storeId=" + request.getStoreId()));
+        ProductEntity menu = productRepository.findById(request.getMenuId())
+                .orElseThrow(() -> new IllegalArgumentException("메뉴를 찾을 수 없습니다. menuId=" + request.getMenuId()));
+        InventoryEntity inventory = inventoryRepository.findById(request.getInventoryId())
+                .orElseThrow(() -> new IllegalArgumentException("재고를 찾을 수 없습니다. inventoryId=" + request.getInventoryId()));
 
-        RecipesEntity recipesEntity = RecipesEntity.builder()
-                .amountPerMenu(recipesRequestDto.getAmountPerMenu())
-                .unit(recipesRequestDto.getUnit())
+        Boolean isActive = Optional.ofNullable(request.getIsActive()).orElse(true);
+
+        RecipesEntity entity = RecipesEntity.builder()
+                .store(store)
+                .menu(menu)
+                .inventory(inventory)
+                .name(request.getName())
+                .amountPerMenu(request.getAmountPerMenu())
+                .unit(request.getUnit())
+                .isActive(isActive)
                 .build();
 
-        RecipesEntity saved = recipesRepository.save(recipesEntity);
+        RecipesEntity saved = recipesRepository.save(entity);
         return RecipesResponseDto.fromEntity(saved);
     }
 
-    // 전체 페이징 조회
     @Transactional(readOnly = true)
-    public Page<RecipesResponseDto> findRecipes(Integer storeId, Pageable pageable){
+    public Page<RecipesResponseDto> findRecipes(Integer storeId, Pageable pageable) {
         Page<RecipesEntity> recipes = recipesRepository.findAllByStoreId(storeId, pageable);
         return recipes.map(RecipesResponseDto::fromEntity);
     }
 
-    // 상세 조회
-    @Transactional
-    public RecipesEntity getRecipeDetail(Integer recipeId){
+    @Transactional(readOnly = true)
+    public RecipesEntity getRecipeDetail(Integer recipeId) {
         return recipesRepository.findById(recipeId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 레시피가 존재하지 않습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("해당 레시피가 존재하지 않습니다. recipeId=" + recipeId));
     }
 
     @Transactional
-    public RecipesResponseDto updateRecipe(Integer recipesId, RecipesRequestDto recipesRequestDto){
+    public RecipesResponseDto updateRecipe(Integer recipesId, RecipesRequestDto request) {
         RecipesEntity recipes = recipesRepository.findById(recipesId)
-                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다. recipesId = " + recipesId));
-        recipes.setAmountPerMenu(recipesRequestDto.getAmountPerMenu());
-        recipes.setUnit(recipesRequestDto.getUnit());
+                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다. recipesId=" + recipesId));
+
+        if (request.getName() != null) {
+            recipes.setName(request.getName());
+        }
+        if (request.getAmountPerMenu() != null) {
+            recipes.setAmountPerMenu(request.getAmountPerMenu());
+        }
+        if (request.getUnit() != null) {
+            recipes.setUnit(request.getUnit());
+        }
+        if (request.getIsActive() != null) {
+            if (Boolean.TRUE.equals(request.getIsActive())) {
+                recipes.activate();
+            } else {
+                recipes.deactivate();
+            }
+        }
+
+        if (request.getMenuId() != null && (recipes.getMenu() == null || !request.getMenuId().equals(recipes.getMenu().getId()))) {
+            ProductEntity menu = productRepository.findById(request.getMenuId())
+                    .orElseThrow(() -> new IllegalArgumentException("메뉴를 찾을 수 없습니다. menuId=" + request.getMenuId()));
+            recipes.setMenu(menu);
+        }
+
+        if (request.getInventoryId() != null && (recipes.getInventory() == null || !request.getInventoryId().equals(recipes.getInventory().getId()))) {
+            InventoryEntity inventory = inventoryRepository.findById(request.getInventoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("재고를 찾을 수 없습니다. inventoryId=" + request.getInventoryId()));
+            recipes.setInventory(inventory);
+        }
 
         RecipesEntity updated = recipesRepository.save(recipes);
-
         return RecipesResponseDto.fromEntity(updated);
     }
 
     @Transactional
-    public void deleteRecipe(Integer recipesId){
+    public void deleteRecipe(Integer recipesId) {
         RecipesEntity entity = recipesRepository.findById(recipesId)
-                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다. recipesId = " + recipesId));
+                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다. recipesId=" + recipesId));
 
         recipesRepository.delete(entity);
     }
-
 }

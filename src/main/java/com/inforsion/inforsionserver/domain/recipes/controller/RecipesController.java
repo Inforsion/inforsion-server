@@ -1,7 +1,7 @@
 package com.inforsion.inforsionserver.domain.recipes.controller;
 
-import com.inforsion.inforsionserver.domain.recipes.Dto.request.RecipesRequestDto;
-import com.inforsion.inforsionserver.domain.recipes.Dto.response.RecipesResponseDto;
+import com.inforsion.inforsionserver.domain.recipes.dto.request.RecipesRequestDto;
+import com.inforsion.inforsionserver.domain.recipes.dto.response.RecipesResponseDto;
 import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
 import com.inforsion.inforsionserver.domain.recipes.service.RecipesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class RecipesController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/{storeId}")
+    @GetMapping("/stores/{storeId}")
     public ResponseEntity<Page<RecipesResponseDto>> findRecipes(
             @Parameter(description = "매장 ID", required = true)
             @PathVariable Integer storeId,

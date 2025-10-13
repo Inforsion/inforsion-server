@@ -16,7 +16,6 @@ import com.inforsion.inforsionserver.domain.ocr.mysql.repository.OcrResultReposi
 import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
-import com.inforsion.inforsionserver.domain.recipe.repository.RecipeRepository;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
 import com.inforsion.inforsionserver.global.enums.MatchMethod;
@@ -45,7 +44,6 @@ public class OcrProcessingService {
     private final OcrJobRepository ocrJobRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
-    private final RecipeRepository recipeRepository;
     private final InventoryUpdateService inventoryUpdateService;
     private final NaverOcrService naverOcrService;
     private final ReceiptAnalysisService receiptAnalysisService;
