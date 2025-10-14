@@ -1,7 +1,9 @@
 package com.inforsion.inforsionserver.domain.ocr.controller;
 
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrConfirmationRequestDto;
+import com.inforsion.inforsionserver.domain.ocr.dto.OcrRawDataResponseDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.ProductMatchingResultDto;
+import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrRawDataEntity;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrResultEntity;
 import com.inforsion.inforsionserver.domain.ocr.service.OcrProcessingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -146,6 +148,38 @@ public class OcrController {
 
         } catch (Exception e) {
             log.error("OCR 처리 이력 조회 중 오류 발생 - 매장 ID: {}, 오류: {}", storeId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ===== 디버깅: OCR 로우 데이터 조회 =====
+    @Operation(
+            summary = "OCR 로우 데이터 조회",
+            description = "OCR 처리 시 읽어온 원본 텍스트 데이터를 확인합니다 (디버깅용). 서버 로그에 상세 내용이 출력됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "데이터를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/raw-data/{rawDataId}")
+    public ResponseEntity<OcrRawDataResponseDto> getRawData(
+            @Parameter(description = "Raw Data ID", required = true)
+            @PathVariable Integer rawDataId) {
+
+        try {
+            log.info("OCR 로우 데이터 조회 요청 - rawDataId: {}", rawDataId);
+
+            OcrRawDataEntity rawData = ocrProcessingService.getRawDataDetail(rawDataId);
+            OcrRawDataResponseDto response = OcrRawDataResponseDto.from(rawData);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("OCR 로우 데이터 조회 실패: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("OCR 로우 데이터 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

@@ -35,15 +35,14 @@ public class OrderService {
      * **/
     @Transactional
     public OrderResponseDto createOrders(@Valid OrderRequestDto orderRequestDto){
-        StoreEntity store = storeRepository.findById(orderRequestDto.getStoreId())
-                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+        TransactionEntity transaction = transactionRepository.findById(orderRequestDto.getTransactionId())
+                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
         OrderEntity orderEntity = OrderEntity.builder()
-                .store(store)
-                .total_amount(orderRequestDto.getTotal_amount())
-                .name(orderRequestDto.getName())
+                .transaction(transaction)
                 .quantity(orderRequestDto.getQuantity())
-                .paymentMethod(orderRequestDto.getPaymentMethod())
+                .unitPrice(orderRequestDto.getUnitPrice())
+                .totalPrice(orderRequestDto.getTotalPrice())
                 .orderStatus(orderRequestDto.getOrderStatus())
                 .build();
 
@@ -56,7 +55,7 @@ public class OrderService {
      * **/
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> findOrders(Integer storeId, Pageable pageable) {
-        return orderRepository.findAllByStoreId(storeId, pageable)
+        return orderRepository.findAllByTransactionStoreId(storeId, pageable)
                 .map(OrderResponseDto::fromEntity);
     }
 
@@ -67,11 +66,10 @@ public class OrderService {
     public OrderResponseDto updateOrder(Integer orderId, OrderRequestDto orderRequestDto){
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다. orderId = " + orderId));
-        order.setName(orderRequestDto.getName());
-        order.setSubtotal_amount(orderRequestDto.getSubtotal_amount());
         order.setQuantity(orderRequestDto.getQuantity());
+        order.setUnitPrice(orderRequestDto.getUnitPrice());
+        order.setTotalPrice(orderRequestDto.getTotalPrice());
         order.setOrderStatus(orderRequestDto.getOrderStatus());
-        order.setTotal_amount(orderRequestDto.getTotal_amount());
 
         OrderEntity updated = orderRepository.save(order);
 
@@ -102,7 +100,6 @@ public class OrderService {
         transactionRepository.deleteAll(transactions);
 
         TransactionConditionDto condition = new TransactionConditionDto();
-        condition.setStoreId(order.getStore().getId());
         condition.setStoreId(order.getTransaction().getStore().getId());
 
         condition.setStartDate(LocalDate.now().minusDays(SALES_DAYS));

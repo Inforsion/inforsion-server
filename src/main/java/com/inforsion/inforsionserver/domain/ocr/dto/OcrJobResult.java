@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.ocr.dto;
 
+import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

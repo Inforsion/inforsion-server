@@ -31,6 +31,12 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(length = 50)
+    private String name;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,4 +48,13 @@ public class UserEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<StoreEntity> stores;
+
+    // 비즈니스 메서드
+    public void updateProfile(String name) {
+        this.name = name;
+    }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
 }

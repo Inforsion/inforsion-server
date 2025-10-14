@@ -1,6 +1,6 @@
 package com.inforsion.inforsionserver.domain.ocr.mysql.repository;
 
-import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobStatus;
+import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrJobEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

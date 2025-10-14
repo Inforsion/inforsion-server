@@ -11,25 +11,22 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class OrderRequestDto {
-    private Integer storeId;
-    private String storeName;
     private Integer id; // 주문 id
-    private BigDecimal subtotal_amount; // 세금 전 총액
-    private BigDecimal total_amount; // 총액
-    private String name; // 주문 이름
+    private Integer menuId; // 메뉴 id
+    private Integer transactionId; // 거래 id
     private Integer quantity; // 주문량
-    private PaymentMethod paymentMethod; // 거래 방법
-    private OrderStatus orderStatus;
+    private BigDecimal unitPrice; // 단가
+    private BigDecimal totalPrice; // 총 가격
+    private OrderStatus orderStatus; // 주문 상태
 
     public static OrderRequestDto fromEntity(OrderEntity entity) {
         return OrderRequestDto.builder()
                 .id(entity.getId())
-                .storeId(entity.getStore().getId())
-                .storeName(entity.getStore().getName())
-                .subtotal_amount(entity.getSubtotal_amount())
-                .total_amount(entity.getTotal_amount())
+                .menuId(entity.getMenu() != null ? entity.getMenu().getId() : null)
+                .transactionId(entity.getTransaction() != null ? entity.getTransaction().getId() : null)
                 .quantity(entity.getQuantity())
-                .paymentMethod(entity.getPaymentMethod())
+                .unitPrice(entity.getUnitPrice())
+                .totalPrice(entity.getTotalPrice())
                 .orderStatus(entity.getOrderStatus())
                 .build();
     }

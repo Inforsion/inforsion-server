@@ -1,7 +1,7 @@
 package com.inforsion.inforsionserver.domain.ocr.mysql.entity;
 
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
-import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobStatus;
+import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

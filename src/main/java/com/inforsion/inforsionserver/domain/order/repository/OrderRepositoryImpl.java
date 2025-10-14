@@ -5,7 +5,6 @@ import com.inforsion.inforsionserver.domain.order.entity.OrderEntity;
 import com.inforsion.inforsionserver.domain.order.entity.QOrderEntity;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,7 +35,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom{
 
         List<OrderEntity> content = queryFactory
                 .selectFrom(order)
-                .where(order.store.id.eq(storeId))
+                .where(order.transaction.store.id.eq(storeId))
                 .orderBy(sortOrders.toArray(OrderSpecifier[]::new))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -45,7 +44,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom{
         Long total = Optional.ofNullable(
                 queryFactory.select(order.count())
                         .from(order)
-                        .where(order.store.id.eq(storeId))
+                        .where(order.transaction.store.id.eq(storeId))
                         .fetchOne()
         ).orElse(0L);
         return new PageImpl<>(content, pageable, total);
@@ -54,15 +53,27 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom{
     public List<OrderSpecifier<?>> getOrderSpecifiers(Pageable pageable, QOrderEntity order){
         return pageable.getSort().stream()
                 .map(sort -> {
-                    Order direction = sort.isAscending() ? Order.ASC:Order.DESC;
-                    switch (sort.getProperty()){
-                        case "name":
-                            return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)order.name);
-                        default:
-                            return new OrderSpecifier<>(direction, (ComparableExpressionBase<?>)order.id);
-                    }
+                    Order direction = sort.isAscending() ? Order.ASC : Order.DESC;
+                    return resolveOrderSpecifier(sort.getProperty(), direction, order);
                 })
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private OrderSpecifier<?> resolveOrderSpecifier(String property, Order direction, QOrderEntity order) {
+        switch (property) {
+            case "menuName":
+                return new OrderSpecifier<>(direction, order.menu.name);
+            case "totalPrice":
+                return new OrderSpecifier<>(direction, order.totalPrice);
+            case "unitPrice":
+                return new OrderSpecifier<>(direction, order.unitPrice);
+            case "quantity":
+                return new OrderSpecifier<>(direction, order.quantity);
+            case "transactionId":
+                return new OrderSpecifier<>(direction, order.transaction.id);
+            default:
+                return new OrderSpecifier<>(direction, order.id);
+        }
     }
 
     /**
@@ -72,11 +83,10 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom{
     public Long updateOrder(Integer orderId, OrderRequestDto orderRequestDto){
         return queryFactory
                 .update(t)
-                .set(t.name, orderRequestDto.getName())
-                .set(t.subtotal_amount, orderRequestDto.getSubtotal_amount())
-                .set(t.total_amount, orderRequestDto.getTotal_amount())
                 .set(t.quantity, orderRequestDto.getQuantity())
-                .set(t.paymentMethod, orderRequestDto.getPaymentMethod())
+                .set(t.unitPrice, orderRequestDto.getUnitPrice())
+                .set(t.totalPrice, orderRequestDto.getTotalPrice())
+                .set(t.orderStatus, orderRequestDto.getOrderStatus())
                 .where(t.id.eq(orderId))
                 .execute();
     }
