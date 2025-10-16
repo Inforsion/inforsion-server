@@ -9,10 +9,12 @@ import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity
 import com.inforsion.inforsionserver.domain.transaction.repository.TransactionRepository;
 import com.inforsion.inforsionserver.global.enums.PeriodType;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
-import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -50,14 +52,15 @@ public class TransactionService {
     /**
      * 거래 조회
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public List<TransactionResponseDto> getTransaction(
             Integer storeId,
             TransactionType transactionType,
             LocalDateTime startDate,
-            LocalDateTime endDate
+            LocalDateTime endDate,
+            Pageable pageable
     ){
-        return transactionRepository.findByStoreIdDateRange(storeId, transactionType, startDate, endDate);
+        return transactionRepository.findByStoreIdDateRange(storeId, transactionType, startDate, endDate, pageable);
     }
 
     /**
@@ -75,8 +78,7 @@ public class TransactionService {
         entity.setPaymentMethod(requestDto.getPaymentMethod());
         entity.setCostCategory(requestDto.getCostCategory());
 
-        TransactionEntity updated = transactionRepository.save(entity);
-        return toResponseDto(updated);
+        return toResponseDto(entity);
 
     }
 
@@ -95,7 +97,7 @@ public class TransactionService {
      * 매출 조회
      * 기간을 받아 기간 내의 매출을 조회합니다.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public List<StoreSalesFinancialDto> getStoreFinancials(TransactionConditionDto condition, PeriodType periodType){
         return transactionRepository.getStoreFinancials(condition, periodType);
     }
@@ -110,4 +112,5 @@ public class TransactionService {
                 entity.getTransactionType()
         );
     }
+
 }

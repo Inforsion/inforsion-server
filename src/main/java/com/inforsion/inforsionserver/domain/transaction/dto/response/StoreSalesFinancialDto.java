@@ -2,14 +2,17 @@ package com.inforsion.inforsionserver.domain.transaction.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class StoreSalesFinancialDto {
     private Integer storeId; // 가게 id
     private String storeName; // 가게 이름
+    private String transactionName;
     private String period; // 기간
     private BigDecimal cardSales; // 카드 매출액
     private BigDecimal cashSales; // 현금 매출액

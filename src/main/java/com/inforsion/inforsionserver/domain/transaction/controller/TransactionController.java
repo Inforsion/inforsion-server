@@ -14,6 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,10 +50,11 @@ public class TransactionController {
             @Parameter(description = "조회 시작 날짜", required = true, example = "2025-08-01T00:00:00")
             @RequestParam LocalDateTime startDate,
             @Parameter(description = "조회 종료 날짜", required = true, example = "2025-08-31T23:59:59")
-            @RequestParam LocalDateTime endDate
+            @RequestParam LocalDateTime endDate,
+            @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         List<TransactionResponseDto> transactions = transactionService.getTransaction(
-                storeId, transactionType, startDate, endDate
+                storeId, transactionType, startDate, endDate, pageable
         );
         return ResponseEntity.ok(transactions);
     }

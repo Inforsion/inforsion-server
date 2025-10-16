@@ -76,6 +76,18 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security Test 지원
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
     testRuntimeOnly 'com.h2database:h2' // H2 in-memory database for testing
+
+    // JasperReports 핵심 라이브러리
+    implementation 'net.sf.jasperreports:jasperreports:6.21.5'
+
+    // PDF 내보내기에 필요한 폰트 지원 (한글 깨짐 방지 필수)
+    implementation 'net.sf.jasperreports:jasperreports-fonts:6.21.5'
+
+    // 웹 환경에서 보고서 출력을 위해 필요한 일반적인 유틸리티 라이브러리
+    implementation 'org.apache.commons:commons-collections4:4.4'
+
+    // Spring에서 PDF 파일을 HTTP 응답으로 스트리밍하는 데 도움을 줄 수 있는 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 }
 
 tasks.named('test') {

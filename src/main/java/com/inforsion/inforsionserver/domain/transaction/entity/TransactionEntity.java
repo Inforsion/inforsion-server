@@ -22,13 +22,14 @@ import java.time.LocalDateTime;
 public class TransactionEntity {
     @Id
     @Column(name = "transaction_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; // 거래 조회를 위한 id
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store; // 가게 id
 
-    @Column(name = "name")
+    @Column(name = "transaction_name")
     private String name; // 거래 이름
 
     @Column(name = "date")

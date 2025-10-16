@@ -3,11 +3,14 @@ package com.inforsion.inforsionserver.domain.recipes.Dto.response;
 import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.security.Timestamp;
 
-@Data
+@Getter
+@Setter
 @Builder
 public class RecipesResponseDto {
     private Integer storeId;
