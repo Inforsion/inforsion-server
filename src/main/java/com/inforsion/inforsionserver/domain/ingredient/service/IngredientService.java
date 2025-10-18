@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.ingredient.service;
 
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientCreateRequest;
+import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientInventoryCreateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientUpdateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.response.IngredientResponse;
@@ -10,6 +11,8 @@ import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
 import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
+import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
+import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
 import com.inforsion.inforsionserver.global.error.exception.IngredientNotFoundException;
 import com.inforsion.inforsionserver.global.error.exception.ProductNotFoundException;
 import com.inforsion.inforsionserver.global.error.exception.DuplicateIngredientException;
@@ -28,6 +31,7 @@ public class IngredientService {
     private final IngredientRepository ingredientRepository;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
+    private final StoreRepository storeRepository;
 
     /**
      * 새로운 재료를 생성합니다.
@@ -43,13 +47,14 @@ public class IngredientService {
      */
     @Transactional
     public IngredientResponse createIngredient(IngredientCreateRequest request) {
+        validateInventoryRequest(request);
+
         ProductEntity product = productRepository.findById(request.getProductId())
                 .orElseThrow(ProductNotFoundException::new);
 
-        InventoryEntity inventory = inventoryRepository.findById(request.getInventoryId())
-                .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
+        InventoryEntity inventory = resolveInventory(request);
 
-        if (ingredientRepository.existsByProductIdAndInventoryId(request.getProductId(), request.getInventoryId())) {
+        if (ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
             throw new DuplicateIngredientException();
         }
 
@@ -155,6 +160,41 @@ public class IngredientService {
         }
 
         return IngredientResponse.from(ingredient);
+    }
+
+    private void validateInventoryRequest(IngredientCreateRequest request) {
+        if (request.getInventoryId() == null && request.getNewInventory() == null) {
+            throw new IllegalArgumentException("재고 ID 또는 신규 재고 정보 중 하나는 반드시 제공되어야 합니다.");
+        }
+
+        if (request.getInventoryId() != null && request.getNewInventory() != null) {
+            throw new IllegalArgumentException("재고 ID와 신규 재고 정보를 동시에 전달할 수 없습니다.");
+        }
+    }
+
+    private InventoryEntity resolveInventory(IngredientCreateRequest request) {
+        if (request.getInventoryId() != null) {
+            return inventoryRepository.findById(request.getInventoryId())
+                    .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
+        }
+
+        IngredientInventoryCreateRequest newInventory = request.getNewInventory();
+        StoreEntity store = storeRepository.findById(newInventory.getStoreId())
+                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다"));
+
+        InventoryEntity inventory = InventoryEntity.builder()
+                .name(newInventory.getName())
+                .currentStock(newInventory.getCurrentStock())
+                .minStock(newInventory.getMinStock())
+                .maxStock(newInventory.getMaxStock())
+                .unit(newInventory.getUnit())
+                .unitCost(newInventory.getUnitCost())
+                .expiryDate(newInventory.getExpiryDate())
+                .lastRestockedDate(newInventory.getLastRestockedDate())
+                .store(store)
+                .build();
+
+        return inventoryRepository.save(inventory);
     }
 
     /**

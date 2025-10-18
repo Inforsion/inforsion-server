@@ -62,6 +62,9 @@ naver:
       username: ${MONGODB_USERNAME:}
       password: ${MONGODB_PASSWORD:}
       authentication-database: admin
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 # 기본 CORS 설정
 cors:
@@ -124,7 +127,7 @@ spring:
     init:
       mode: never                       # SQL 스크립트 실행하지 않음
 
-  # MongoDB 설정 (Docker 환경)
+  # MongoDB 설정 (Docker 환경) & Redis
   data:
     mongodb:
       host: ${MONGODB_HOST:mongodb}
@@ -133,6 +136,9 @@ spring:
       username: ${MONGODB_USERNAME:admin}
       password: ${MONGODB_PASSWORD:adminpassword}
       authentication-database: admin
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
 
 # Docker 환경 CORS 설정 (개발용으로 관대하게)
 cors:
@@ -186,6 +192,9 @@ spring:
       username: ${MONGODB_USERNAME:admin}
       password: ${MONGODB_PASSWORD:adminpassword}
       authentication-database: admin
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
 
 # RDS 환경 CORS 설정
 cors:

@@ -2,6 +2,7 @@ package com.inforsion.inforsionserver.domain.ingredient.dto.request;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -16,9 +17,12 @@ import java.math.BigDecimal;
 public class IngredientCreateRequest {
 
     @Schema(description = "재고 ID", example = "1")
-    @NotNull(message = "재고 ID는 필수입니다")
     @Positive(message = "재고 ID는 양수여야 합니다")
     private Integer inventoryId;
+
+    @Schema(description = "새로운 재고 생성 정보")
+    @Valid
+    private IngredientInventoryCreateRequest newInventory;
 
     @Schema(description = "상품 1개당 필요한 재료량", example = "15.5")
     @NotNull(message = "재료량은 필수입니다")
