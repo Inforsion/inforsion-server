@@ -65,6 +65,10 @@ public enum ErrorCode {
     // Access Errors
     ACCESS_DENIED("AC001", "접근이 거부되었습니다.", HttpStatus.FORBIDDEN),
 
+    // External API Errors
+    EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    EXTERNAL_API_UNAUTHORIZED("E002", "외부 API 인증에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+
     // File Upload Errors
     FILE_UPLOAD_FAILED("F001", "파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_FILE_FORMAT("F002", "지원하지 않는 파일 형식입니다.", HttpStatus.BAD_REQUEST),

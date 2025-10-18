@@ -92,9 +92,9 @@ public class StoreEntity {
      * 썸네일 이미지 메타데이터 업데이트
      */
     public void updateThumbnailMetadata(String thumbnailUrl, String originalFileName, String s3Key) {
-        if (thumbnailUrl != null) this.thumbnailUrl = thumbnailUrl;
-        if (originalFileName != null) this.originalFileName = originalFileName;
-        if (s3Key != null) this.s3Key = s3Key;
+        this.thumbnailUrl = thumbnailUrl;
+        this.originalFileName = originalFileName;
+        this.s3Key = s3Key;
     }
 
     /**

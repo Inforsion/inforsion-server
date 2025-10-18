@@ -18,4 +18,8 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Integer>, Qu
     Optional<StoreEntity> findByIdAndUserId(Integer id, Integer userId);
     
     boolean existsByNameAndLocation(String name, String location);
+
+    boolean existsByNameAndUserId(String name, Integer userId);
+
+    boolean existsByNameAndUserIdAndIdNot(String name, Integer userId, Integer id);
 }
