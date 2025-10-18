@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "가게 정보 수정 요청 DTO")
 public class StoreUpdateRequest {
 
-    @Schema(description = "가게 이름", example = "인퓨전 리뉴얼")
+    @Schema(description = "가게 이름", example = "인포전 리뉴얼")
     @Size(max = 100, message = "가게 이름은 100자를 넘을 수 없습니다.")
     private String name;
 

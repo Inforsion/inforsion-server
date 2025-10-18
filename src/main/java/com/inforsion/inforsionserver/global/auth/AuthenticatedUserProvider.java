@@ -6,6 +6,7 @@ import com.inforsion.inforsionserver.global.error.exception.UserNotFoundExceptio
 import com.inforsion.inforsionserver.global.jwt.JwtTokenProvider;
 import com.inforsion.inforsionserver.global.jwt.TokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,9 +20,15 @@ public class AuthenticatedUserProvider {
     private final TokenService tokenService;
     private final UserRepository userRepository;
 
-    public Integer getUserId(String authorizationHeader) {
+    /**
+     * 보안 컨텍스트에 저장된 현재 사용자 ID를 반환합니다.
+     * JWT 필터에서 이미 인증이 완료된 상태여야 하며, 없으면 인증 실패로 처리합니다.
+     */
+    public Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserPrincipal userPrincipal) {
                 return userPrincipal.getId();
@@ -30,7 +37,10 @@ public class AuthenticatedUserProvider {
                 return mapUserIdFromEmail(userDetails.getUsername());
             }
         }
+        throw new AuthenticationFailedException("인증 정보가 필요합니다.");
+    }
 
+    public Integer getUserId(String authorizationHeader) {
         String accessToken = AuthorizationHeaderUtil.extractAccessToken(authorizationHeader);
 
         if (!jwtTokenProvider.validateToken(accessToken)) {

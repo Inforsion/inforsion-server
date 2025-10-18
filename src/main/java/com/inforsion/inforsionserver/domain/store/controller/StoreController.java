@@ -35,17 +35,15 @@ public class StoreController {
     @Operation(summary = "가게 생성", description = "현재 로그인한 사용자의 새로운 가게를 생성합니다.")
     @PostMapping
     public ResponseEntity<StoreResponse> createStore(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody StoreCreateRequest request) {
 
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         StoreResponse response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @Operation(summary = "카카오 주소 검색", description = "카카오맵 주소 검색 API를 사용해 주소를 조회합니다.")
     @GetMapping("/address-search")
     public ResponseEntity<StoreAddressSearchDto.Response> searchAddresses(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Parameter(description = "검색어", required = true, example = "판교역로 242")
             @RequestParam String query,
             @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
@@ -53,7 +51,7 @@ public class StoreController {
             @Parameter(description = "페이지당 결과 수", example = "10")
             @RequestParam(required = false) Integer size
     ) {
-        authenticatedUserProvider.getUserId(authorizationHeader);
+        authenticatedUserProvider.getCurrentUserId();
         StoreAddressSearchDto.Response response = storeService.searchAddresses(query, page, size);
         return ResponseEntity.ok(response);
     }
@@ -76,11 +74,10 @@ public class StoreController {
         })
     @GetMapping("/my")
     public ResponseEntity<List<StoreResponse>> getMyStores(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Parameter(description = "활성 상태 필터 (true: 활성, false: 비활성, null: 전체)", example = "true")
             @RequestParam(required = false) Boolean isActive) {
 
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         List<StoreResponse> responses;
         if (isActive != null) {
             responses = storeService.getStoresByUserIdAndStatus(userId, isActive);
@@ -93,9 +90,8 @@ public class StoreController {
     @Operation(summary = "가게 단건 조회", description = "특정 가게의 상세 정보를 조회합니다.")
     @GetMapping("/{storeId}")
     public ResponseEntity<StoreResponse> getStore(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable Integer storeId) {
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         StoreResponse response = storeService.getStore(storeId, userId);
         return ResponseEntity.ok(response);
     }
@@ -103,10 +99,9 @@ public class StoreController {
     @Operation(summary = "가게 정보 수정", description = "특정 가게의 정보를 수정합니다.")
     @PutMapping("/{storeId}")
     public ResponseEntity<StoreResponse> updateStore(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable Integer storeId,
             @Valid @RequestBody StoreUpdateRequest request) {
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         StoreResponse response = storeService.updateStore(storeId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -114,9 +109,8 @@ public class StoreController {
     @Operation(summary = "가게 삭제", description = "특정 가게를 삭제합니다.")
     @DeleteMapping("/{storeId}")
     public ResponseEntity<Void> deleteStore(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable Integer storeId) {
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         storeService.deleteStore(storeId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -149,12 +143,11 @@ public class StoreController {
     })
     @PostMapping(value = "/{storeId}/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoreResponse> uploadStoreThumbnail(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Parameter(description = "가게 ID", required = true, example = "1")
             @PathVariable Integer storeId,
             @Parameter(description = "업로드할 썸네일 이미지 파일", required = true)
             @RequestParam("file") MultipartFile file) {
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         StoreResponse response = storeService.uploadStoreThumbnail(storeId, userId, file);
         return ResponseEntity.ok(response);
     }
@@ -177,10 +170,9 @@ public class StoreController {
     })
     @DeleteMapping("/{storeId}/thumbnail")
     public ResponseEntity<Void> deleteStoreThumbnail(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Parameter(description = "가게 ID", required = true, example = "1")
             @PathVariable Integer storeId) {
-        Integer userId = authenticatedUserProvider.getUserId(authorizationHeader);
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
         storeService.deleteStoreThumbnail(storeId, userId);
         return ResponseEntity.noContent().build();
     }

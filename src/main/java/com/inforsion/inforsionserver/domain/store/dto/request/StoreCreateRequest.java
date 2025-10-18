@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "가게 생성 요청 DTO")
 public class StoreCreateRequest {
 
-    @Schema(description = "가게 이름", example = "인퓨전")
+    @Schema(description = "가게 이름", example = "인포전")
     @NotBlank(message = "가게 이름은 필수 입력값입니다.")
     @Size(max = 100, message = "가게 이름은 100자를 넘을 수 없습니다.")
     private String name;
