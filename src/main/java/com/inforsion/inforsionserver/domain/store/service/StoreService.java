@@ -1,16 +1,24 @@
 package com.inforsion.inforsionserver.domain.store.service;
 
-import com.inforsion.inforsionserver.domain.store.dto.StoreDto;
+import com.inforsion.inforsionserver.domain.store.dto.external.StoreAddressSearchDto;
+import com.inforsion.inforsionserver.domain.store.dto.request.StoreCreateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.response.StoreResponse;
+import com.inforsion.inforsionserver.domain.store.dto.request.StoreUpdateRequest;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
 import com.inforsion.inforsionserver.domain.user.entity.UserEntity;
 import com.inforsion.inforsionserver.domain.user.repository.UserRepository;
+import com.inforsion.inforsionserver.global.error.exception.StoreAccessDeniedException;
+import com.inforsion.inforsionserver.global.error.exception.StoreAlreadyExistsException;
 import com.inforsion.inforsionserver.global.error.exception.StoreNotFoundException;
 import com.inforsion.inforsionserver.global.error.exception.UserNotFoundException;
+import com.inforsion.inforsionserver.global.infra.kakao.KakaoMapClient;
+import com.inforsion.inforsionserver.global.infra.kakao.dto.KakaoAddressSearchResponse;
 import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -24,17 +32,26 @@ public class StoreService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final S3FileUploadService s3FileUploadService;
+    private final KakaoMapClient kakaoMapClient;
 
     private static final String S3_DIRECTORY = "stores";
 
     @Transactional
-    public StoreDto.Response createStore(Integer userId, StoreDto.CreateRequest request) {
+    public StoreResponse createStore(Integer userId, StoreCreateRequest request) {
         UserEntity user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
+        String name = sanitizeRequired(request.getName());
+        String location = sanitizeRequired(request.getLocation());
+        String description = trimToNull(request.getDescription());
+
+        if (storeRepository.existsByNameAndUserId(name, userId)) {
+            throw new StoreAlreadyExistsException();
+        }
+
         StoreEntity store = StoreEntity.builder()
-                .name(request.getName())
-                .location(request.getLocation())
-                .description(request.getDescription())
+                .name(name)
+                .location(location)
+                .description(description)
                 // TODO: 추후 필요시 주석 해제
                 // .phoneNumber(request.getPhoneNumber())
                 // .email(request.getEmail())
@@ -44,12 +61,47 @@ public class StoreService {
                 .build();
 
         StoreEntity savedStore = storeRepository.save(store);
-        return StoreDto.Response.from(savedStore);
+        return StoreResponse.from(savedStore);
     }
 
-    public StoreDto.Response getStore(Integer storeId) {
-        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
-        return StoreDto.Response.from(store);
+    /**
+     * 카카오 맵 주소 검색 API를 이용해 주소 목록을 조회합니다.
+     *
+     * @param query 검색어
+     * @param page  페이지 번호 (1 기준)
+     * @param size  페이지당 결과 수
+     * @return 가공된 주소 검색 응답 DTO
+     */
+    public StoreAddressSearchDto.Response searchAddresses(String query, Integer page, Integer size) {
+        KakaoAddressSearchResponse kakaoResponse = kakaoMapClient.searchAddress(query, page, size);
+
+        List<StoreAddressSearchDto.Address> addresses = kakaoResponse != null && kakaoResponse.getDocuments() != null
+                ? kakaoResponse.getDocuments().stream()
+                .map(document -> StoreAddressSearchDto.Address.builder()
+                        .addressName(document.getAddressName())
+                        .roadAddressName(document.getRoadAddressName())
+                        .jibunAddressName(document.getAddress() != null ? document.getAddress().getAddressName() : null)
+                        .buildingName(document.getRoadAddress() != null ? document.getRoadAddress().getBuildingName() : null)
+                        .zoneNo(document.getRoadAddress() != null ? document.getRoadAddress().getZoneNo() : null)
+                        .latitude(parseToDouble(document.getLatitude()))
+                        .longitude(parseToDouble(document.getLongitude()))
+                        .build())
+                .collect(Collectors.toList())
+                : List.of();
+
+        KakaoAddressSearchResponse.Meta meta = kakaoResponse != null ? kakaoResponse.getMeta() : null;
+
+        return StoreAddressSearchDto.Response.builder()
+                .addresses(addresses)
+                .isEnd(meta != null && meta.isEnd())
+                .pageableCount(meta != null ? meta.getPageableCount() : addresses.size())
+                .totalCount(meta != null ? meta.getTotalCount() : addresses.size())
+                .build();
+    }
+
+    public StoreResponse getStore(Integer storeId, Integer userId) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
+        return StoreResponse.from(store);
     }
 
     /**
@@ -59,7 +111,7 @@ public class StoreService {
      * @return 사용자가 소유한 가게 목록
      * @throws UserNotFoundException 사용자가 존재하지 않는 경우
      */
-    public List<StoreDto.Response> getStoresByUserId(Integer userId) {
+    public List<StoreResponse> getStoresByUserId(Integer userId) {
         // 사용자 존재 여부 확인
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
@@ -67,7 +119,7 @@ public class StoreService {
 
         List<StoreEntity> stores = storeRepository.findByUserId(userId);
         return stores.stream()
-                .map(StoreDto.Response::from)
+                .map(StoreResponse::from)
                 .collect(Collectors.toList());
     }
 
@@ -79,7 +131,7 @@ public class StoreService {
      * @return 조건에 맞는 가게 목록
      * @throws UserNotFoundException 사용자가 존재하지 않는 경우
      */
-    public List<StoreDto.Response> getStoresByUserIdAndStatus(Integer userId, Boolean isActive) {
+    public List<StoreResponse> getStoresByUserIdAndStatus(Integer userId, Boolean isActive) {
         // 사용자 존재 여부 확인
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
@@ -87,20 +139,27 @@ public class StoreService {
 
         List<StoreEntity> stores = storeRepository.findByUserIdAndIsActive(userId, isActive);
         return stores.stream()
-                .map(StoreDto.Response::from)
+                .map(StoreResponse::from)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public StoreDto.Response updateStore(Integer storeId, StoreDto.UpdateRequest request) {
-        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
+    public StoreResponse updateStore(Integer storeId, Integer userId, StoreUpdateRequest request) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
 
-        // TODO: 사용자 권한 확인 로직 추가 필요 (로그인한 사용자가 가게 주인인지)
+        String sanitizedName = trimToNull(request.getName());
+        String sanitizedLocation = trimToNull(request.getLocation());
+        String sanitizedDescription = request.getDescription() != null ? request.getDescription().trim() : null;
+
+        if (sanitizedName != null &&
+                storeRepository.existsByNameAndUserIdAndIdNot(sanitizedName, store.getUser().getId(), store.getId())) {
+            throw new StoreAlreadyExistsException();
+        }
 
         store.update(
-                request.getName(),
-                request.getLocation(),
-                request.getDescription(),
+                sanitizedName,
+                sanitizedLocation,
+                sanitizedDescription,
                 // TODO: 추후 필요시 주석 해제
                 // request.getPhoneNumber(),
                 // request.getEmail(),
@@ -109,14 +168,12 @@ public class StoreService {
                 request.getIsActive()
         );
 
-        return StoreDto.Response.from(store);
+        return StoreResponse.from(store);
     }
 
     @Transactional
-    public void deleteStore(Integer storeId) {
-        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
-
-        // TODO: 사용자 권한 확인 로직 추가 필요
+    public void deleteStore(Integer storeId, Integer userId) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
 
         // S3에서 썸네일 이미지 삭제
         if (store.hasThumbnail()) {
@@ -144,10 +201,8 @@ public class StoreService {
      * @throws RuntimeException S3 업로드 실패 시
      */
     @Transactional
-    public StoreDto.Response uploadStoreThumbnail(Integer storeId, MultipartFile file) {
-        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
-
-        // TODO: 사용자 권한 확인 로직 추가 필요
+    public StoreResponse uploadStoreThumbnail(Integer storeId, Integer userId, MultipartFile file) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
 
         // 기존 이미지가 있다면 S3에서 삭제
         if (store.hasThumbnail()) {
@@ -165,7 +220,7 @@ public class StoreService {
         // 가게 엔티티에 이미지 정보 저장
         store.updateThumbnailMetadata(imageUrl, file.getOriginalFilename(), s3Key);
 
-        return StoreDto.Response.from(store);
+        return StoreResponse.from(store);
     }
 
     /**
@@ -177,10 +232,8 @@ public class StoreService {
      * @throws StoreNotFoundException 가게가 존재하지 않는 경우
      */
     @Transactional
-    public void deleteStoreThumbnail(Integer storeId) {
-        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
-
-        // TODO: 사용자 권한 확인 로직 추가 필요
+    public void deleteStoreThumbnail(Integer storeId, Integer userId) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
 
         // S3에서 실제 파일 삭제
         if (store.hasThumbnail()) {
@@ -193,5 +246,32 @@ public class StoreService {
 
         // 가게 엔티티에서 이미지 정보 제거
         store.updateThumbnailMetadata(null, null, null);
+    }
+
+    private String sanitizeRequired(String value) {
+        if (!StringUtils.hasText(value)) {
+            throw new IllegalArgumentException("필수 값은 공백일 수 없습니다.");
+        }
+        return value.trim();
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private StoreEntity getStoreOwnedBy(Integer storeId, Integer userId) {
+        StoreEntity store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
+        if (!store.getUser().getId().equals(userId)) {
+            throw new StoreAccessDeniedException();
+        }
+        return store;
+    }
+
+    private Double parseToDouble(String value) {
+        try {
+            return value != null ? Double.parseDouble(value) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -5,9 +5,8 @@ import com.inforsion.inforsionserver.domain.inventory.entity.InventoryLogEntity;
 import com.inforsion.inforsionserver.domain.inventory.repository.InventoryLogRepository;
 import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrResultEntity;
-import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
-import com.inforsion.inforsionserver.domain.recipe.entity.RecipeEntity;
-import com.inforsion.inforsionserver.domain.recipe.repository.RecipeRepository;
+import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
+import com.inforsion.inforsionserver.domain.recipes.repository.RecipesRepository;
 import com.inforsion.inforsionserver.global.enums.InventoryLogType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,7 @@ import java.util.List;
 @Slf4j
 public class InventoryUpdateService {
 
-    private final RecipeRepository recipeRepository;
+    private final RecipesRepository recipesRepository;
     private final InventoryRepository inventoryRepository;
     private final InventoryLogRepository inventoryLogRepository;
 
@@ -58,7 +57,7 @@ public class InventoryUpdateService {
         Integer quantity = ocrResult.getQuantity();
         
         // 해당 메뉴의 레시피 조회
-        List<RecipeEntity> recipes = recipeRepository.findByMenuIdAndIsActive(menuId, true);
+        List<RecipesEntity> recipes = recipesRepository.findByMenuIdAndIsActive(menuId, true);
         
         if (recipes.isEmpty()) {
             log.warn("메뉴 ID {}에 대한 활성 레시피가 없습니다.", menuId);
@@ -66,7 +65,7 @@ public class InventoryUpdateService {
         }
         
         // 각 레시피의 재료별로 재고 차감
-        for (RecipeEntity recipe : recipes) {
+        for (RecipesEntity recipe : recipes) {
             deductIngredientInventory(recipe, quantity, ocrResult);
         }
         
@@ -76,7 +75,7 @@ public class InventoryUpdateService {
     /**
      * 개별 재료의 재고 차감
      */
-    private void deductIngredientInventory(RecipeEntity recipe, Integer menuQuantity, OcrResultEntity ocrResult) {
+    private void deductIngredientInventory(RecipesEntity recipe, Integer menuQuantity, OcrResultEntity ocrResult) {
         InventoryEntity inventory = recipe.getInventory();
         
         // 필요한 재료 수량 계산 (레시피의 1인분 * 주문 수량)

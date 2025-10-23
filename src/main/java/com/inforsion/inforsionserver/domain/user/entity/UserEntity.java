@@ -31,8 +31,8 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
-    @Column(length = 50)
-    private String name;
+//    @Column(length = 50)
+//    private String name;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
@@ -50,9 +50,9 @@ public class UserEntity {
     private List<StoreEntity> stores;
 
     // 비즈니스 메서드
-    public void updateProfile(String name) {
-        this.name = name;
-    }
+//    public void updateProfile(String name) {
+//        this.name = name;
+//    }
 
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();

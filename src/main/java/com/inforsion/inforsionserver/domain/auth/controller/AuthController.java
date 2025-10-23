@@ -1,10 +1,10 @@
 package com.inforsion.inforsionserver.domain.auth.controller;
 
+import com.inforsion.inforsionserver.domain.auth.dto.request.LoginRequestDto;
+import com.inforsion.inforsionserver.domain.auth.dto.response.LoginResponseDto;
+import com.inforsion.inforsionserver.domain.auth.dto.response.TokenResponseDto;
 import com.inforsion.inforsionserver.domain.auth.service.AuthService;
-import com.inforsion.inforsionserver.domain.user.dto.request.LoginRequestDto;
 import com.inforsion.inforsionserver.domain.user.dto.request.UserCreateRequestDto;
-import com.inforsion.inforsionserver.domain.user.dto.response.LoginResponseDto;
-import com.inforsion.inforsionserver.domain.user.dto.response.TokenResponseDto;
 import com.inforsion.inforsionserver.domain.user.dto.response.UserResponseDto;
 import com.inforsion.inforsionserver.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;

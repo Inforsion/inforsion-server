@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.global.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,24 +10,27 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import com.inforsion.inforsionserver.global.auth.JwtAuthenticationEntryPoint;
+import com.inforsion.inforsionserver.global.auth.JwtAuthenticationFilter;
 
 /**
  * Spring Security 설정
- * - 모든 엔드포인트 허용 (개발 단계)
+ * - 카카오맵 주소 검색 포함 가게 API는 인증 필요
  * - CSRF 비활성화
  * - Stateless 세션 (JWT 사용)
  * - Swagger UI 접근 허용
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
-
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
-        this.corsConfigurationSource = corsConfigurationSource;
-    }
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,8 +46,13 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // 모든 요청 허용 (개발 단계)
+            .exceptionHandling(configurer ->
+                configurer.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            )
+
+            // 가게 관련 API는 인증 필요, 나머지는 허용
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/stores/**").authenticated()
                 .anyRequest().permitAll()
             )
 
@@ -51,7 +60,10 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable)
 
             // 폼 로그인 비활성화
-            .formLogin(AbstractHttpConfigurer::disable);
+            .formLogin(AbstractHttpConfigurer::disable)
+
+            // JWT 필터 등록
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

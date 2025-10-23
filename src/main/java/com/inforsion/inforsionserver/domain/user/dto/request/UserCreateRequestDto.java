@@ -26,6 +26,6 @@ public class UserCreateRequestDto {
     @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다")
     private String password;
 
-    @Size(max = 50, message = "이름은 50자 이하여야 합니다")
-    private String name;
+//    @Size(max = 50, message = "이름은 50자 이하여야 합니다")
+//    private String name;
 }
