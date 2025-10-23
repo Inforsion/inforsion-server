@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-
+import com.inforsion.inforsionserver.global.enums.PeriodType;
 
 @RestController
 @RequestMapping("/api/v1/report")
@@ -29,7 +29,7 @@ public class ReportController {
             description = "리포트를 생성하기 위해 사용됩니다."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "리포트 생성 성공"),
+            @ApiResponse(responseCode = "200", description = "PDF 리포트 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
@@ -37,9 +37,11 @@ public class ReportController {
     public ResponseEntity<byte[]> generateReportPdf(
             @RequestParam Integer storeId,
             @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
+            @RequestParam LocalDate endDate,
+            @RequestParam(defaultValue = "MONTH") PeriodType periodType
+    ) {
         try {
-            byte[] pdfData = reportService.generateReportPdf(storeId, startDate, endDate);
+            byte[] pdfData = reportService.generateReportPdf(storeId, startDate, endDate, periodType);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=financial-report.pdf")

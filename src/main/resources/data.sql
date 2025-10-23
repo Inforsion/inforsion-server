@@ -128,13 +128,13 @@ INSERT IGNORE INTO recipes (menu_id, inventory_id, amount_per_menu, unit, is_act
 -- TransactionEntity 테이블: transactions
 -- 2024년 1월 22일 하루 동안의 매출 현황
 -- 결제 방법: CARD(카드), CASH(현금), MOBILE_PAY(모바일페이)
-INSERT IGNORE INTO transactions (store_id, total_amount, transaction_type, payment_method, transaction_date, created_at, updated_at) VALUES
-(1, 15000.00, 'SALE', 'CARD', '2024-01-22 09:30:00', NOW(), NOW()),
-(1, 22000.00, 'SALE', 'CASH', '2024-01-22 11:15:00', NOW(), NOW()),
-(1, 8500.00, 'SALE', 'MOBILE_PAY', '2024-01-22 14:20:00', NOW(), NOW()),
-(2, 18500.00, 'SALE', 'CARD', '2024-01-22 10:45:00', NOW(), NOW()),
-(2, 12000.00, 'SALE', 'CASH', '2024-01-22 16:30:00', NOW(), NOW()),
-(3, 24000.00, 'SALE', 'CARD', '2024-01-22 13:00:00', NOW(), NOW());
+--INSERT IGNORE INTO transactions (store_id, total_amount, transaction_type, payment_method, transaction_date, created_at, updated_at) VALUES
+--(1, 15000.00, 'SALE', 'CARD', '2024-01-22 09:30:00', NOW(), NOW()),
+--(1, 22000.00, 'SALE', 'CASH', '2024-01-22 11:15:00', NOW(), NOW()),
+--(1, 8500.00, 'SALE', 'MOBILE_PAY', '2024-01-22 14:20:00', NOW(), NOW()),
+--(2, 18500.00, 'SALE', 'CARD', '2024-01-22 10:45:00', NOW(), NOW()),
+--(2, 12000.00, 'SALE', 'CASH', '2024-01-22 16:30:00', NOW(), NOW()),
+--(3, 24000.00, 'SALE', 'CARD', '2024-01-22 13:00:00', NOW(), NOW());
 
 -- 7. 주문 상세 데이터
 -- OrderEntity 테이블: orders

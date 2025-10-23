@@ -9,12 +9,10 @@ import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity
 import com.inforsion.inforsionserver.domain.transaction.repository.TransactionRepository;
 import com.inforsion.inforsionserver.global.enums.PeriodType;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
-import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -57,10 +55,9 @@ public class TransactionService {
             Integer storeId,
             TransactionType transactionType,
             LocalDateTime startDate,
-            LocalDateTime endDate,
-            Pageable pageable
+            LocalDateTime endDate
     ){
-        return transactionRepository.findByStoreIdDateRange(storeId, transactionType, startDate, endDate, pageable);
+        return transactionRepository.findByStoreIdDateRange(storeId, transactionType, startDate, endDate);
     }
 
     /**

@@ -4,7 +4,6 @@ import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesF
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionRequestDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.TransactionResponseDto;
-import com.inforsion.inforsionserver.domain.transaction.entity.TransactionEntity;
 import com.inforsion.inforsionserver.global.enums.PeriodType;
 import com.inforsion.inforsionserver.global.enums.TransactionType;
 

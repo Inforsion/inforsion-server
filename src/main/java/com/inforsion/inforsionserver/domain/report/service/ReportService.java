@@ -3,13 +3,14 @@ package com.inforsion.inforsionserver.domain.report.service;
 import com.inforsion.inforsionserver.domain.transaction.dto.request.TransactionConditionDto;
 import com.inforsion.inforsionserver.domain.transaction.dto.response.StoreSalesFinancialDto;
 import com.inforsion.inforsionserver.domain.transaction.service.TransactionService;
+import com.inforsion.inforsionserver.global.enums.PeriodType;
 import lombok.AllArgsConstructor;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -19,30 +20,36 @@ import java.util.Map;
 @Service
 @AllArgsConstructor
 public class ReportService {
-
     private final TransactionService transactionService;
 
-    public byte[] generateReportPdf(Integer storeId, LocalDate startDate, LocalDate endDate) throws Exception {
+    public byte[] generateReportPdf(Integer storeId, LocalDate startDate, LocalDate endDate, PeriodType periodType) throws Exception {
+
         TransactionConditionDto condition = new TransactionConditionDto();
         condition.setStoreId(storeId);
         condition.setStartDate(startDate);
         condition.setEndDate(endDate);
 
-        // 기간별 매출 데이터 조회
-        List<StoreSalesFinancialDto> reportData = transactionService.getStoreFinancials(condition);
-
-        InputStream jrxmlInput = new ClassPathResource("reports/financial_summary.jrxml").getInputStream();
-        JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlInput);
+        List<StoreSalesFinancialDto> reportData =
+                transactionService.getStoreFinancials(condition, PeriodType.MONTH);
 
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(reportData);
 
+        InputStream reportStream =
+                new ClassPathResource("reports/store_sales_report.jrxml").getInputStream();
+        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("ReportTitle", "재무 요약 보고서");
-        parameters.put("Period", startDate.toString() + " ~ " + endDate.toString());
+        parameters.put("REPORT_TITLE", "매장 매출 리포트");
+        parameters.put("STORE_ID", storeId);
+        parameters.put("START_DATE", startDate.toString());
+        parameters.put("END_DATE", endDate.toString());
+        parameters.put("PERIOD_TYPE", periodType.name());
 
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
 
-        return JasperExportManager.exportReportToPdf(jasperPrint);
-    }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
 
+        return outputStream.toByteArray();
+    }
 }

@@ -40,7 +40,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
             Integer storeId,
             TransactionType transactionType,
             LocalDateTime startDate,
-            LocalDateTime endDate,
+            LocalDateTime endDate
     ) {
 
         return queryFactory
@@ -74,7 +74,7 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .set(t.amount, requestDto.getAmount())
                 .set(t.date, requestDto.getDate())
                 .set(t.transactionType, requestDto.getType())
-                .where(t.id.eq(transactionId)) // 특정 행만 업데이트
+                .where(t.id.eq(transactionId))
                 .execute();
     }
 
@@ -120,10 +120,10 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
         String pattern;
 
         switch (periodType) { // 기간 타입 별 정리
-            case MONTH: pattern = "%Y-%m"; break;
-            case YEAR:  pattern = "%Y"; break;
-            case DAY:   pattern = "%d"; break;
-            default:    pattern = "%Y-%m-%d"; break;
+            case MONTH -> pattern = "%Y-%m";
+            case YEAR ->  pattern = "%Y";
+            case DAY ->   pattern = "%d";
+            default -> pattern = "%Y-%m-%d";
         }
 
         var periodExpr = Expressions.stringTemplate("DATE_FORMAT({0}, '" + pattern + "')", t.date);

@@ -50,11 +50,10 @@ public class TransactionController {
             @Parameter(description = "조회 시작 날짜", required = true, example = "2025-08-01T00:00:00")
             @RequestParam LocalDateTime startDate,
             @Parameter(description = "조회 종료 날짜", required = true, example = "2025-08-31T23:59:59")
-            @RequestParam LocalDateTime endDate,
-            @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam LocalDateTime endDate
     ) {
         List<TransactionResponseDto> transactions = transactionService.getTransaction(
-                storeId, transactionType, startDate, endDate, pageable
+                storeId, transactionType, startDate, endDate
         );
         return ResponseEntity.ok(transactions);
     }
