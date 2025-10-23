@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,5 +40,6 @@ public class UserEntity {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<StoreEntity> stores;
 }

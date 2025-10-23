@@ -3,12 +3,17 @@ package com.inforsion.inforsionserver.domain.ocr.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrConfirmationRequestDto;
+import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobResponseDto;
+import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobStatus;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrProcessingRequestDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.ProductMatchingResultDto;
 import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrRawDataEntity;
 import com.inforsion.inforsionserver.domain.ocr.mongo.repository.OcrRawDataRepository;
+import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrJobEntity;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrResultEntity;
+import com.inforsion.inforsionserver.domain.ocr.mysql.repository.OcrJobRepository;
 import com.inforsion.inforsionserver.domain.ocr.mysql.repository.OcrResultRepository;
+import com.inforsion.inforsionserver.domain.ocr.dto.ReceiptItem;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
 import com.inforsion.inforsionserver.domain.recipe.entity.RecipeEntity;
@@ -19,12 +24,17 @@ import com.inforsion.inforsionserver.global.enums.MatchMethod;
 import com.inforsion.inforsionserver.global.enums.MatchType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,11 +44,35 @@ public class OcrProcessingService {
 
     private final OcrRawDataRepository ocrRawDataRepository;
     private final OcrResultRepository ocrResultRepository;
+    private final OcrJobRepository ocrJobRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final RecipeRepository recipeRepository;
     private final InventoryUpdateService inventoryUpdateService;
+    private final NaverOcrService naverOcrService;
+    private final ReceiptAnalysisService receiptAnalysisService;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 이미지 파일을 통한 OCR 처리
+     */
+    @Transactional
+    public ProductMatchingResultDto processImageOcr(MultipartFile imageFile, Integer storeId, String documentType) {
+        try {
+            log.info("이미지 OCR 처리 시작: 파일명={}, 크기={} bytes, 매장ID={}",
+                    imageFile.getOriginalFilename(), imageFile.getSize(), storeId);
+
+            // 1. 네이버 OCR API를 통해 이미지에서 텍스트 추출
+            OcrProcessingRequestDto ocrRequestDto = naverOcrService.processImageWithNaverOcr(imageFile, storeId, documentType);
+
+            // 2. 추출된 OCR 데이터를 기존 로직으로 처리
+            return processOcrData(ocrRequestDto);
+
+        } catch (Exception e) {
+            log.error("이미지 OCR 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("이미지 OCR 처리에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
 
     /**
      * 1단계: OCR 원본 데이터를 MongoDB에 저장
@@ -48,12 +82,12 @@ public class OcrProcessingService {
         try {
             // 1. MongoDB에 원본 데이터 저장
             Integer rawDataId = saveRawData(requestDto);
-            
+
             // 2. 제품 매칭 수행
             ProductMatchingResultDto matchingResult = performProductMatching(requestDto, rawDataId);
-            
+
             return matchingResult;
-            
+
         } catch (Exception e) {
             log.error("OCR 데이터 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("OCR 데이터 처리에 실패했습니다.", e);
@@ -88,83 +122,129 @@ public class OcrProcessingService {
     }
 
     /**
-     * 제품 매칭 수행
+     * 제품 매칭 수행 - ReceiptAnalysisService 사용
      */
     private ProductMatchingResultDto performProductMatching(OcrProcessingRequestDto requestDto, Integer rawDataId) {
-        List<ProductEntity> storeProducts = productRepository.findByStoreId(requestDto.getStoreId());
+        // rawOcrText를 줄 단위로 분할
+        List<String> textLines = Arrays.asList(requestDto.getRawOcrText().split("\n"));
+
+        // ReceiptAnalysisService를 사용하여 제품 매칭
+        List<ReceiptItem> extractedItems = receiptAnalysisService.extractReceiptItems(textLines, requestDto.getStoreId());
+
         List<ProductMatchingResultDto.MatchedItemDto> matchedItems = new ArrayList<>();
-        
-        for (OcrProcessingRequestDto.OcrItemDto ocrItem : requestDto.getParsedItems()) {
-            List<ProductMatchingResultDto.ProductCandidateDto> candidates = findProductCandidates(ocrItem, storeProducts);
-            
-            ProductMatchingResultDto.MatchedItemDto matchedItem = ProductMatchingResultDto.MatchedItemDto.builder()
-                    .ocrItemName(ocrItem.getItemName())
-                    .quantity(ocrItem.getQuantity())
-                    .price(ocrItem.getPrice())
-                    .totalAmount(ocrItem.getTotalAmount())
-                    .productCandidates(candidates)
-                    .confirmed(false)
-                    .build();
-                    
-            // 정확히 일치하는 제품이 있으면 자동 선택
-            candidates.stream()
-                    .filter(ProductMatchingResultDto.ProductCandidateDto::getExactMatch)
-                    .findFirst()
-                    .ifPresent(exactMatch -> {
-                        matchedItem.setSelectedProductId(exactMatch.getProductId());
-                        matchedItem.setConfirmed(true);
-                    });
-                    
-            matchedItems.add(matchedItem);
+        List<ProductEntity> storeProducts = productRepository.findByStoreId(requestDto.getStoreId());
+
+        for (ReceiptItem item : extractedItems) {
+            // 매칭된 제품 찾기 (부분 문자열 매칭)
+            ProductEntity matchedProduct = findBestMatchingProduct(item.getProductName(), storeProducts);
+
+            if (matchedProduct != null) {
+                // 정확히 매칭된 제품이 있는 경우
+                ProductMatchingResultDto.ProductCandidateDto candidate = ProductMatchingResultDto.ProductCandidateDto.builder()
+                        .productId(matchedProduct.getId())
+                        .productName(matchedProduct.getName())
+                        .price(matchedProduct.getPrice())
+                        .similarityScore(1.0) // 완전 매칭
+                        .exactMatch(true)
+                        .build();
+
+                ProductMatchingResultDto.MatchedItemDto matchedItem = ProductMatchingResultDto.MatchedItemDto.builder()
+                        .ocrItemName(item.getProductName())
+                        .quantity(item.getQuantity())
+                        .price(item.getUnitPrice())
+                        .totalAmount(item.getTotalPrice())
+                        .productCandidates(List.of(candidate))
+                        .selectedProductId(matchedProduct.getId())
+                        .confirmed(true) // 자동으로 확정
+                        .build();
+
+                matchedItems.add(matchedItem);
+            }
         }
-        
+
+        log.info("제품 매칭 완료: 총 {}개 아이템 매칭됨", matchedItems.size());
+
         return ProductMatchingResultDto.builder()
                 .rawDataId(rawDataId)
                 .matchedItems(matchedItems)
                 .build();
     }
 
+
     /**
-     * 제품 후보 찾기 (유사도 기반)
+     * 최적의 제품 매칭 찾기 (부분 문자열 + 유사도 기반)
      */
-    private List<ProductMatchingResultDto.ProductCandidateDto> findProductCandidates(
-            OcrProcessingRequestDto.OcrItemDto ocrItem, List<ProductEntity> storeProducts) {
-        
-        return storeProducts.stream()
-                .map(product -> {
-                    double similarity = calculateSimilarity(ocrItem.getItemName(), product.getName());
-                    boolean exactMatch = similarity >= 0.9; // 90% 이상 유사하면 정확한 매치로 간주
-                    
-                    return ProductMatchingResultDto.ProductCandidateDto.builder()
-                            .productId(product.getId())
-                            .productName(product.getName())
-                            .price(product.getPrice())
-                            .similarityScore(similarity)
-                            .exactMatch(exactMatch)
-                            .build();
-                })
-                .filter(candidate -> candidate.getSimilarityScore() >= 0.5) // 50% 이상 유사한 것만 후보로
-                .sorted((a, b) -> Double.compare(b.getSimilarityScore(), a.getSimilarityScore())) // 유사도 높은 순으로 정렬
-                .limit(5) // 상위 5개만
-                .collect(Collectors.toList());
+    private ProductEntity findBestMatchingProduct(String ocrText, List<ProductEntity> storeProducts) {
+        if (ocrText == null || ocrText.trim().isEmpty()) {
+            return null;
+        }
+
+        ProductEntity bestMatch = null;
+        double bestScore = 0.0;
+
+        for (ProductEntity product : storeProducts) {
+            double score = calculateProductMatchScore(ocrText, product.getName());
+            log.debug("제품 매칭 점수: '{}' vs '{}' = {}", ocrText, product.getName(), score);
+
+            if (score > bestScore && score >= 0.6) { // 60% 이상 유사도만 허용
+                bestScore = score;
+                bestMatch = product;
+            }
+        }
+
+        if (bestMatch != null) {
+            log.info("제품 매칭 성공: '{}' → '{}' (점수: {})", ocrText, bestMatch.getName(), bestScore);
+        } else {
+            log.warn("제품 매칭 실패: '{}' - 유사한 제품을 찾을 수 없음", ocrText);
+        }
+
+        return bestMatch;
     }
 
     /**
-     * 문자열 유사도 계산 (레벤슈타인 거리 기반)
+     * 제품명 매칭 점수 계산
      */
-    private double calculateSimilarity(String str1, String str2) {
-        if (str1 == null || str2 == null) return 0.0;
-        
-        str1 = str1.toLowerCase().trim();
-        str2 = str2.toLowerCase().trim();
-        
-        if (str1.equals(str2)) return 1.0;
-        
-        int maxLength = Math.max(str1.length(), str2.length());
-        if (maxLength == 0) return 1.0;
-        
-        int levenshteinDistance = calculateLevenshteinDistance(str1, str2);
-        return 1.0 - (double) levenshteinDistance / maxLength;
+    private double calculateProductMatchScore(String ocrText, String productName) {
+        if (ocrText == null || productName == null) {
+            return 0.0;
+        }
+
+        // 대소문자 구분 없이 처리
+        String normalizedOcr = ocrText.toLowerCase().trim();
+        String normalizedProduct = productName.toLowerCase().trim();
+
+        // 1. 완전 일치
+        if (normalizedOcr.equals(normalizedProduct)) {
+            return 1.0;
+        }
+
+        // 2. 부분 문자열 포함 검사
+        if (normalizedOcr.contains(normalizedProduct)) {
+            return 0.9; // OCR 텍스트가 제품명을 포함하는 경우 (예: "I-T)아메리카노" contains "아메리카노")
+        }
+
+        if (normalizedProduct.contains(normalizedOcr)) {
+            return 0.8; // 제품명이 OCR 텍스트를 포함하는 경우
+        }
+
+        // 3. 키워드 기반 매칭 (공백과 특수문자 제거 후)
+        String cleanOcr = normalizedOcr.replaceAll("[^가-힣a-z0-9]", "");
+        String cleanProduct = normalizedProduct.replaceAll("[^가-힣a-z0-9]", "");
+
+        if (cleanOcr.contains(cleanProduct) || cleanProduct.contains(cleanOcr)) {
+            return 0.7;
+        }
+
+        // 4. 레벤슈타인 거리 기반 유사도
+        int distance = calculateLevenshteinDistance(cleanOcr, cleanProduct);
+        int maxLength = Math.max(cleanOcr.length(), cleanProduct.length());
+
+        if (maxLength == 0) {
+            return 0.0;
+        }
+
+        double similarity = 1.0 - (double) distance / maxLength;
+        return Math.max(0.0, similarity);
     }
 
     /**
@@ -172,7 +252,7 @@ public class OcrProcessingService {
      */
     private int calculateLevenshteinDistance(String str1, String str2) {
         int[][] dp = new int[str1.length() + 1][str2.length() + 1];
-        
+
         for (int i = 0; i <= str1.length(); i++) {
             for (int j = 0; j <= str2.length(); j++) {
                 if (i == 0) {
@@ -187,7 +267,7 @@ public class OcrProcessingService {
                 }
             }
         }
-        
+
         return dp[str1.length()][str2.length()];
     }
 
@@ -277,9 +357,285 @@ public class OcrProcessingService {
     }
 
     /**
+     * 1단계 결과를 사용자 수정용으로 조회 (1.5단계)
+     */
+    public ProductMatchingResultDto getOcrPreview(Integer rawDataId) {
+        try {
+            // MongoDB에서 원본 데이터 조회
+            OcrRawDataEntity rawData = ocrRawDataRepository.findByRawDataId(rawDataId)
+                    .orElseThrow(() -> new IllegalArgumentException("원본 OCR 데이터를 찾을 수 없습니다: " + rawDataId));
+
+            // 원본 OCR 텍스트를 다시 파싱해서 매칭 결과 생성
+            OcrProcessingRequestDto requestDto = OcrProcessingRequestDto.builder()
+                    .storeId(rawData.getStoreId())
+                    .documentType(rawData.getDocumentType())
+                    .rawOcrText(rawData.getRawOcrText())
+                    .parsedItems(new ArrayList<>()) // 빈 리스트
+                    .supplierName(rawData.getSupplierName())
+                    .documentDate(rawData.getDocumentDate())
+                    .build();
+
+            // 제품 매칭 다시 수행
+            ProductMatchingResultDto result = performProductMatching(requestDto, rawDataId);
+
+            log.info("OCR 미리보기 생성 완료: rawDataId={}, 매칭된 아이템 수={}",
+                    rawDataId, result.getMatchedItems().size());
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("OCR 미리보기 생성 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("OCR 미리보기 생성에 실패했습니다.", e);
+        }
+    }
+
+    /**
      * 특정 매장의 OCR 처리 이력 조회
      */
     public List<OcrResultEntity> getOcrHistory(Integer storeId) {
         return ocrResultRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+    }
+
+    // ===== 비동기 처리 메서드들 =====
+
+    /**
+     * 비동기 이미지 OCR 처리 시작
+     */
+    public OcrJobResponseDto startAsyncImageOcr(MultipartFile imageFile, Integer storeId, String documentType) {
+        try {
+            // 1. Job ID 생성 및 초기 Job 엔티티 생성
+            String jobUuid = UUID.randomUUID().toString();
+            StoreEntity store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다: " + storeId));
+
+            OcrJobEntity jobEntity = OcrJobEntity.builder()
+                    .jobUuid(jobUuid)
+                    .store(store)
+                    .documentType(documentType)
+                    .originalFilename(imageFile.getOriginalFilename())
+                    .fileSize(imageFile.getSize())
+                    .status(OcrJobStatus.PENDING)
+                    .build();
+
+            ocrJobRepository.save(jobEntity);
+
+            // 2. 비동기 처리 시작
+            processImageOcrAsync(jobUuid, imageFile, storeId, documentType);
+
+            // 3. 즉시 응답 반환
+            return OcrJobResponseDto.fromPending(jobUuid);
+
+        } catch (Exception e) {
+            log.error("비동기 OCR 작업 시작 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("비동기 OCR 작업 시작에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 비동기 OCR 데이터 처리 시작
+     */
+    public OcrJobResponseDto startAsyncOcrData(OcrProcessingRequestDto requestDto) {
+        try {
+            // 1. Job ID 생성 및 초기 Job 엔티티 생성
+            String jobUuid = UUID.randomUUID().toString();
+            StoreEntity store = storeRepository.findById(requestDto.getStoreId())
+                    .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다: " + requestDto.getStoreId()));
+
+            OcrJobEntity jobEntity = OcrJobEntity.builder()
+                    .jobUuid(jobUuid)
+                    .store(store)
+                    .documentType(requestDto.getDocumentType().name())
+                    .status(OcrJobStatus.PENDING)
+                    .build();
+
+            ocrJobRepository.save(jobEntity);
+
+            // 2. 비동기 처리 시작
+            processOcrDataAsync(jobUuid, requestDto);
+
+            // 3. 즉시 응답 반환
+            return OcrJobResponseDto.fromPending(jobUuid);
+
+        } catch (Exception e) {
+            log.error("비동기 OCR 데이터 처리 시작 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("비동기 OCR 데이터 처리 시작에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 비동기 이미지 OCR 처리 실행
+     */
+    @Async("ocrTaskExecutor")
+    public void processImageOcrAsync(String jobUuid, MultipartFile imageFile, Integer storeId, String documentType) {
+        OcrJobEntity jobEntity = null;
+        try {
+            // Job 상태를 PROCESSING으로 변경
+            jobEntity = ocrJobRepository.findByJobUuid(jobUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Job을 찾을 수 없습니다: " + jobUuid));
+
+            jobEntity.updateStatus(OcrJobStatus.PROCESSING);
+            ocrJobRepository.save(jobEntity);
+
+            log.info("비동기 이미지 OCR 처리 시작: jobUuid={}, 파일명={}", jobUuid, imageFile.getOriginalFilename());
+
+            // 진행률 10% 업데이트
+            jobEntity.updateProgress(10);
+            ocrJobRepository.save(jobEntity);
+
+            // 1. 네이버 OCR API 호출
+            OcrProcessingRequestDto ocrRequestDto = naverOcrService.processImageWithNaverOcr(imageFile, storeId, documentType);
+
+            // 진행률 50% 업데이트
+            jobEntity.updateProgress(50);
+            ocrJobRepository.save(jobEntity);
+
+            // 2. OCR 데이터 처리
+            ProductMatchingResultDto result = processOcrData(ocrRequestDto);
+
+            // 진행률 90% 업데이트
+            jobEntity.updateProgress(90);
+            ocrJobRepository.save(jobEntity);
+
+            // 3. 결과 저장 및 완료 처리
+            jobEntity.setRawDataId(result.getRawDataId());
+            jobEntity.setMatchingResultJson(objectMapper.writeValueAsString(result));
+            jobEntity.updateStatus(OcrJobStatus.COMPLETED);
+            ocrJobRepository.save(jobEntity);
+
+            log.info("비동기 이미지 OCR 처리 완료: jobUuid={}, rawDataId={}", jobUuid, result.getRawDataId());
+
+        } catch (Exception e) {
+            log.error("비동기 이미지 OCR 처리 중 오류 발생: jobUuid={}, 오류={}", jobUuid, e.getMessage(), e);
+            if (jobEntity != null) {
+                jobEntity.setError("OCR 처리 중 오류 발생: " + e.getMessage());
+                ocrJobRepository.save(jobEntity);
+            }
+        }
+    }
+
+    /**
+     * 비동기 OCR 데이터 처리 실행
+     */
+    @Async("ocrTaskExecutor")
+    public void processOcrDataAsync(String jobUuid, OcrProcessingRequestDto requestDto) {
+        OcrJobEntity jobEntity = null;
+        try {
+            // Job 상태를 PROCESSING으로 변경
+            jobEntity = ocrJobRepository.findByJobUuid(jobUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Job을 찾을 수 없습니다: " + jobUuid));
+
+            jobEntity.updateStatus(OcrJobStatus.PROCESSING);
+            ocrJobRepository.save(jobEntity);
+
+            log.info("비동기 OCR 데이터 처리 시작: jobUuid={}, 매장ID={}", jobUuid, requestDto.getStoreId());
+
+            // 진행률 20% 업데이트
+            jobEntity.updateProgress(20);
+            ocrJobRepository.save(jobEntity);
+
+            // OCR 데이터 처리
+            ProductMatchingResultDto result = processOcrData(requestDto);
+
+            // 진행률 90% 업데이트
+            jobEntity.updateProgress(90);
+            ocrJobRepository.save(jobEntity);
+
+            // 결과 저장 및 완료 처리
+            jobEntity.setRawDataId(result.getRawDataId());
+            jobEntity.setMatchingResultJson(objectMapper.writeValueAsString(result));
+            jobEntity.updateStatus(OcrJobStatus.COMPLETED);
+            ocrJobRepository.save(jobEntity);
+
+            log.info("비동기 OCR 데이터 처리 완료: jobUuid={}, rawDataId={}", jobUuid, result.getRawDataId());
+
+        } catch (Exception e) {
+            log.error("비동기 OCR 데이터 처리 중 오류 발생: jobUuid={}, 오류={}", jobUuid, e.getMessage(), e);
+            if (jobEntity != null) {
+                jobEntity.setError("OCR 데이터 처리 중 오류 발생: " + e.getMessage());
+                ocrJobRepository.save(jobEntity);
+            }
+        }
+    }
+
+    /**
+     * OCR Job 상태 조회
+     */
+    public OcrJobResponseDto getJobStatus(String jobUuid) {
+        OcrJobEntity jobEntity = ocrJobRepository.findByJobUuid(jobUuid)
+                .orElseThrow(() -> new IllegalArgumentException("Job을 찾을 수 없습니다: " + jobUuid));
+
+        try {
+            switch (jobEntity.getStatus()) {
+                case PENDING:
+                    return OcrJobResponseDto.builder()
+                            .jobId(jobUuid)
+                            .status(OcrJobStatus.PENDING)
+                            .progressPercentage(0)
+                            .message("OCR 작업이 대기 중입니다.")
+                            .createdAt(jobEntity.getCreatedAt())
+                            .build();
+
+                case PROCESSING:
+                    return OcrJobResponseDto.builder()
+                            .jobId(jobUuid)
+                            .status(OcrJobStatus.PROCESSING)
+                            .progressPercentage(jobEntity.getProgressPercentage())
+                            .message("OCR 작업을 처리 중입니다.")
+                            .createdAt(jobEntity.getCreatedAt())
+                            .startedAt(jobEntity.getStartedAt())
+                            .build();
+
+                case COMPLETED:
+                    ProductMatchingResultDto result = null;
+                    if (jobEntity.getMatchingResultJson() != null) {
+                        result = objectMapper.readValue(jobEntity.getMatchingResultJson(), ProductMatchingResultDto.class);
+                    }
+                    return OcrJobResponseDto.builder()
+                            .jobId(jobUuid)
+                            .status(OcrJobStatus.COMPLETED)
+                            .progressPercentage(100)
+                            .message("OCR 작업이 완료되었습니다.")
+                            .createdAt(jobEntity.getCreatedAt())
+                            .startedAt(jobEntity.getStartedAt())
+                            .completedAt(jobEntity.getCompletedAt())
+                            .result(result)
+                            .build();
+
+                case FAILED:
+                    return OcrJobResponseDto.builder()
+                            .jobId(jobUuid)
+                            .status(OcrJobStatus.FAILED)
+                            .progressPercentage(0)
+                            .message("OCR 작업이 실패했습니다.")
+                            .createdAt(jobEntity.getCreatedAt())
+                            .startedAt(jobEntity.getStartedAt())
+                            .completedAt(jobEntity.getCompletedAt())
+                            .errorMessage(jobEntity.getErrorMessage())
+                            .build();
+
+                default:
+                    throw new IllegalStateException("알 수 없는 Job 상태: " + jobEntity.getStatus());
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Job 결과 JSON 파싱 오류: jobUuid={}, 오류={}", jobUuid, e.getMessage(), e);
+            throw new RuntimeException("Job 결과를 조회하는 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 매장의 모든 OCR Job 조회
+     */
+    public List<OcrJobResponseDto> getStoreJobs(Integer storeId) {
+        List<OcrJobEntity> jobs = ocrJobRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+        return jobs.stream()
+                .map(job -> {
+                    try {
+                        return getJobStatus(job.getJobUuid());
+                    } catch (Exception e) {
+                        log.warn("Job 상태 조회 중 오류: jobUuid={}, 오류={}", job.getJobUuid(), e.getMessage());
+                        return OcrJobResponseDto.fromFailed(job.getJobUuid(), "상태 조회 실패");
+                    }
+                })
+                .collect(Collectors.toList());
     }
 }
