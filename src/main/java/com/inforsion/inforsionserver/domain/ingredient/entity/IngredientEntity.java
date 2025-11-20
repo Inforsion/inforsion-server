@@ -25,10 +25,10 @@ public class IngredientEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "amount_per_product", nullable = false, precision = 10, scale = 2)
+    @Column(name = "amount_per_product", precision = 10, scale = 2)
     private BigDecimal amountPerProduct;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String unit;
 
     @Column(columnDefinition = "TEXT")
@@ -47,7 +47,7 @@ public class IngredientEntity {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id")
     private ProductEntity product;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -71,6 +71,23 @@ public class IngredientEntity {
         if (isActive != null) {
             this.isActive = isActive;
         }
+    }
+
+    public void assignProduct(ProductEntity product, BigDecimal amountPerProduct, String unit, String description) {
+        this.product = product;
+        if (amountPerProduct != null) {
+            this.amountPerProduct = amountPerProduct;
+        }
+        if (unit != null) {
+            this.unit = unit;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
+
+    public void updateInventory(InventoryEntity inventory) {
+        this.inventory = inventory;
     }
 
 }

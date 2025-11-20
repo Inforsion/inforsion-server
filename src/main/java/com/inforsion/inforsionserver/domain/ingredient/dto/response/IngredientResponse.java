@@ -1,6 +1,9 @@
 package com.inforsion.inforsionserver.domain.ingredient.dto.response;
 
 import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
+import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
+import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,18 +60,22 @@ public class IngredientResponse {
      * Entity에서 Response로 변환
      */
     public static IngredientResponse from(IngredientEntity entity) {
+        ProductEntity product = entity.getProduct();
+        InventoryEntity inventory = entity.getInventory();
+        StoreEntity store = product != null ? product.getStore() : (inventory != null ? inventory.getStore() : null);
+
         return IngredientResponse.builder()
                 .id(entity.getId())
-                .inventoryId(entity.getInventory() != null ? entity.getInventory().getId() : null)
-                .inventoryName(entity.getInventory() != null ? entity.getInventory().getName() : null)
+                .inventoryId(inventory != null ? inventory.getId() : null)
+                .inventoryName(inventory != null ? inventory.getName() : null)
                 .amountPerProduct(entity.getAmountPerProduct())
                 .unit(entity.getUnit())
                 .description(entity.getDescription())
                 .isActive(entity.getIsActive())
-                .productId(entity.getProduct().getId())
-                .productName(entity.getProduct().getName())
-                .storeId(entity.getProduct().getStore().getId())
-                .storeName(entity.getProduct().getStore().getName())
+                .productId(product != null ? product.getId() : null)
+                .productName(product != null ? product.getName() : null)
+                .storeId(store != null ? store.getId() : null)
+                .storeName(store != null ? store.getName() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

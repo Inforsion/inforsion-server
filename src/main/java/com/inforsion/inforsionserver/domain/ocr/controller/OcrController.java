@@ -6,6 +6,7 @@ import com.inforsion.inforsionserver.domain.ocr.dto.ProductMatchingResultDto;
 import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrRawDataEntity;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrResultEntity;
 import com.inforsion.inforsionserver.domain.ocr.service.OcrProcessingService;
+import com.inforsion.inforsionserver.global.enums.DocumentType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -182,5 +184,55 @@ public class OcrController {
             log.error("OCR 로우 데이터 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @Operation(
+            summary = "최근 OCR 원본 데이터 조회",
+            description = "MongoDB에 저장된 OCR 인식 결과 원문 텍스트를 빠르게 확인합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 조회 조건"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/raw-data")
+    public ResponseEntity<List<OcrRawDataResponseDto>> getRecentRawData(
+            @Parameter(description = "매장 ID", required = false)
+            @RequestParam(required = false) Integer storeId,
+            @Parameter(description = "문서 타입 (SALES_RECEIPT / SUPPLY_INVOICE)", required = false)
+            @RequestParam(required = false) String documentType,
+            @Parameter(description = "최대 조회 건수 (1~100)", required = false)
+            @RequestParam(required = false, defaultValue = "10") Integer limit) {
+
+        try {
+            DocumentType docType = resolveDocumentType(documentType);
+            int sanitizedLimit = (limit == null || limit < 1 || limit > 100) ? 10 : limit;
+
+            List<OcrRawDataResponseDto> recentRawData =
+                    ocrProcessingService.getRecentRawData(storeId, docType, sanitizedLimit);
+
+            return ResponseEntity.ok(recentRawData);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("OCR 원본 데이터 조회 파라미터 오류: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("OCR 원본 데이터 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private DocumentType resolveDocumentType(String documentType) {
+        if (!StringUtils.hasText(documentType)) {
+            return null;
+        }
+
+        String trimmed = documentType.trim();
+        for (DocumentType type : DocumentType.values()) {
+            if (type.name().equalsIgnoreCase(trimmed) || type.getValue().equalsIgnoreCase(trimmed)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("지원하지 않는 문서 타입입니다: " + documentType);
     }
 }

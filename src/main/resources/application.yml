@@ -22,7 +22,12 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect  # MySQL 데이터베이스 방언 설정
         format_sql: true                            # SQL 쿼리를 보기 좋게 포맷팅
     defer-datasource-initialization: false          # data.sql 미사용으로 false로 변경
-  
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+ 
   # 데이터베이스 초기화 설정 (data.sql 비활성화)
   sql:
     init:
@@ -77,6 +82,11 @@ kakao:
 cors:
   allowed-origins: "http://localhost:8081,http://localhost:19006"
   allowed-origins-patterns: ""
+
+# OCR 배치 처리 간격 (기본 60초)
+ocr:
+  batch:
+    interval-ms: ${OCR_BATCH_INTERVAL_MS:60000}
 
 # 기본 로깅 설정
 logging:
@@ -171,7 +181,10 @@ spring:
       on-profile: rds
 
   datasource:
-    url: jdbc:mysql://inforsion-rds.c70uuq2mcwbq.ap-southeast-2.rds.amazonaws.com:3306/${DB_NAME:inforsion_db}?useSSL=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    # 기존 RDS 접속 정보 (중지)
+    # url: jdbc:mysql://inforsion-rds.c70uuq2mcwbq.ap-southeast-2.rds.amazonaws.com:3306/${DB_NAME:inforsion_db}?useSSL=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    # 로컬/도커용 기본값을 사용하도록 변경
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:inforsion_db}?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
     username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -189,6 +202,11 @@ spring:
   sql:
     init:
       mode: never                       # SQL 스크립트 실행하지 않음
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
 
   # MongoDB 설정 (기존 유지)
   data:

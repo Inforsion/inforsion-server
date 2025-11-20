@@ -2,6 +2,7 @@ package com.inforsion.inforsionserver.domain.ingredient.service;
 
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientCreateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientInventoryCreateRequest;
+import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientProductLinkRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientUpdateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.response.IngredientResponse;
@@ -49,12 +50,18 @@ public class IngredientService {
     public IngredientResponse createIngredient(IngredientCreateRequest request) {
         validateInventoryRequest(request);
 
-        ProductEntity product = productRepository.findById(request.getProductId())
-                .orElseThrow(ProductNotFoundException::new);
+        ProductEntity product = null;
+        if (request.getProductId() != null) {
+            product = productRepository.findById(request.getProductId())
+                    .orElseThrow(ProductNotFoundException::new);
+            if (request.getAmountPerProduct() == null || request.getUnit() == null) {
+                throw new IllegalArgumentException("상품과 연결하려면 재료량과 단위를 함께 전달해야 합니다.");
+            }
+        }
 
-        InventoryEntity inventory = resolveInventory(request);
+        InventoryEntity inventory = resolveInventory(request, product);
 
-        if (ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
+        if (product != null && ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
             throw new DuplicateIngredientException();
         }
 
@@ -81,6 +88,26 @@ public class IngredientService {
     public IngredientResponse getIngredient(Integer ingredientId) {
         IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
                 .orElseThrow(IngredientNotFoundException::new);
+        return IngredientResponse.from(ingredient);
+    }
+
+    /**
+     * 상품과 연결되지 않은 재료를 나중에 메뉴와 연결합니다.
+     */
+    @Transactional
+    public IngredientResponse linkIngredientToProduct(Integer ingredientId, IngredientProductLinkRequest request) {
+        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(IngredientNotFoundException::new);
+
+        ProductEntity product = productRepository.findById(request.getProductId())
+                .orElseThrow(ProductNotFoundException::new);
+
+        InventoryEntity inventory = ingredient.getInventory();
+        if (inventory != null && ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
+            throw new DuplicateIngredientException();
+        }
+
+        ingredient.assignProduct(product, request.getAmountPerProduct(), request.getUnit(), request.getDescription());
         return IngredientResponse.from(ingredient);
     }
 
@@ -136,10 +163,11 @@ public class IngredientService {
                 .orElseThrow(IngredientNotFoundException::new);
 
         // 재고 ID 변경 시 중복 체크
-        if (request.getInventoryId() != null && 
-            !request.getInventoryId().equals(ingredient.getInventory().getId())) {
-            
-            if (ingredientRepository.existsByProductIdAndInventoryId(
+        Integer currentInventoryId = ingredient.getInventory() != null ? ingredient.getInventory().getId() : null;
+        if (request.getInventoryId() != null &&
+            !request.getInventoryId().equals(currentInventoryId)) {
+
+            if (ingredient.getProduct() != null && ingredientRepository.existsByProductIdAndInventoryId(
                 ingredient.getProduct().getId(), request.getInventoryId())) {
                 throw new DuplicateIngredientException();
             }
@@ -147,6 +175,7 @@ public class IngredientService {
             // 새로운 재고 엔티티 조회
             InventoryEntity newInventory = inventoryRepository.findById(request.getInventoryId())
                     .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
+            ingredient.updateInventory(newInventory);
         }
 
         ingredient.update(
@@ -172,15 +201,23 @@ public class IngredientService {
         }
     }
 
-    private InventoryEntity resolveInventory(IngredientCreateRequest request) {
+    private InventoryEntity resolveInventory(IngredientCreateRequest request, ProductEntity product) {
         if (request.getInventoryId() != null) {
             return inventoryRepository.findById(request.getInventoryId())
                     .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
         }
 
         IngredientInventoryCreateRequest newInventory = request.getNewInventory();
-        StoreEntity store = storeRepository.findById(newInventory.getStoreId())
-                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다"));
+        StoreEntity store = newInventory.getStoreId() != null
+                ? storeRepository.findById(newInventory.getStoreId())
+                    .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다"))
+                : product != null
+                    ? product.getStore()
+                    : null; // storeId 없고 상품도 없으면 에러 처리
+
+        if (store == null) {
+            throw new IllegalArgumentException("매장을 찾을 수 없습니다. storeId 또는 상품 정보를 제공해야 합니다.");
+        }
 
         InventoryEntity inventory = InventoryEntity.builder()
                 .name(newInventory.getName())

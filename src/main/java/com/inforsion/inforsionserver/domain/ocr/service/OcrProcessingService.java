@@ -2,11 +2,13 @@ package com.inforsion.inforsionserver.domain.ocr.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrConfirmationRequestDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrJobResponseDto;
-import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
 import com.inforsion.inforsionserver.domain.ocr.dto.OcrProcessingRequestDto;
 import com.inforsion.inforsionserver.domain.ocr.dto.ProductMatchingResultDto;
+import com.inforsion.inforsionserver.domain.ocr.dto.OcrRawDataResponseDto;
 import com.inforsion.inforsionserver.domain.ocr.mongo.entity.OcrRawDataEntity;
 import com.inforsion.inforsionserver.domain.ocr.mongo.repository.OcrRawDataRepository;
 import com.inforsion.inforsionserver.domain.ocr.mysql.entity.OcrJobEntity;
@@ -18,8 +20,11 @@ import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
+import com.inforsion.inforsionserver.global.enums.DocumentType;
 import com.inforsion.inforsionserver.global.enums.MatchMethod;
 import com.inforsion.inforsionserver.global.enums.MatchType;
+import com.inforsion.inforsionserver.global.enums.OcrJobStatus;
+import com.inforsion.inforsionserver.global.mongo.MongoSequenceGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -30,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,11 +49,13 @@ public class OcrProcessingService {
     private final OcrResultRepository ocrResultRepository;
     private final OcrJobRepository ocrJobRepository;
     private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
     private final StoreRepository storeRepository;
     private final InventoryUpdateService inventoryUpdateService;
     private final NaverOcrService naverOcrService;
     private final ReceiptAnalysisService receiptAnalysisService;
     private final ObjectMapper objectMapper;
+    private final MongoSequenceGenerator mongoSequenceGenerator;
 
     /**
      * 이미지 파일을 통한 OCR 처리
@@ -96,8 +104,11 @@ public class OcrProcessingService {
     private Integer saveRawData(OcrProcessingRequestDto requestDto) throws JsonProcessingException {
         // 파싱된 아이템들을 JSON으로 변환
         String parsedItemJson = objectMapper.writeValueAsString(requestDto.getParsedItems());
-        
+
+        Integer rawDataId = mongoSequenceGenerator.getNextSequence("ocr_raw_data_seq");
+
         OcrRawDataEntity rawDataEntity = OcrRawDataEntity.builder()
+                .rawDataId(rawDataId)
                 .storeId(requestDto.getStoreId())
                 .documentType(requestDto.getDocumentType())
                 .rawOcrText(requestDto.getRawOcrText())
@@ -105,15 +116,10 @@ public class OcrProcessingService {
                 .supplierName(requestDto.getSupplierName())
                 .documentDate(requestDto.getDocumentDate())
                 .build();
-                
+
         // MongoDB에 저장하고 자동 증가된 rawDataId 설정
-        OcrRawDataEntity savedEntity = ocrRawDataRepository.save(rawDataEntity);
-        
-        // MongoDB의 ObjectId를 기반으로 rawDataId 생성 (간단한 해시 또는 순번 사용)
-        Integer rawDataId = generateRawDataId(savedEntity.getId());
-        savedEntity.setRawDataId(rawDataId);
-        ocrRawDataRepository.save(savedEntity);
-        
+        ocrRawDataRepository.save(rawDataEntity);
+
         return rawDataId;
     }
 
@@ -268,14 +274,6 @@ public class OcrProcessingService {
     }
 
     /**
-     * MongoDB ObjectId를 기반으로 rawDataId 생성
-     */
-    private Integer generateRawDataId(String mongoId) {
-        // 간단한 해시 기반 ID 생성 (실제로는 더 정교한 방법 사용 가능)
-        return Math.abs(mongoId.hashCode() % 1000000);
-    }
-
-    /**
      * 3단계: 사용자 확인/수정 후 MySQL에 저장하고 재고 업데이트
      */
     @Transactional
@@ -306,34 +304,48 @@ public class OcrProcessingService {
      * 확정된 OCR 결과를 MySQL에 저장
      */
     private void saveOcrResultToMySQL(OcrRawDataEntity rawData, StoreEntity store,
-                                     OcrConfirmationRequestDto.ConfirmedItemDto confirmedItem) {
+                                      OcrConfirmationRequestDto.ConfirmedItemDto confirmedItem) {
 
-        // 선택된 제품 정보 조회
-        ProductEntity selectedProduct = productRepository.findById(confirmedItem.getSelectedProductId())
-                .orElseThrow(() -> new IllegalArgumentException("선택된 제품을 찾을 수 없습니다: " + confirmedItem.getSelectedProductId()));
+        DocumentType documentType = rawData.getDocumentType();
+        boolean isSalesReceipt = documentType == DocumentType.SALES_RECEIPT;
+
+        ProductEntity selectedProduct = null;
+        InventoryEntity selectedInventory = null;
+
+        if (isSalesReceipt) {
+            selectedProduct = productRepository.findById(confirmedItem.getSelectedProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("선택된 제품을 찾을 수 없습니다: " + confirmedItem.getSelectedProductId()));
+        } else {
+            Integer inventoryId = confirmedItem.getSelectedInventoryId();
+            if (inventoryId == null) {
+                throw new IllegalArgumentException("공급 송장 처리에는 selectedInventoryId가 필요합니다.");
+            }
+            selectedInventory = inventoryRepository.findById(inventoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("선택된 재고를 찾을 수 없습니다: " + inventoryId));
+        }
 
         // 매치 방법 결정 (사용자가 수정했는지 여부에 따라)
         MatchMethod matchMethod = (confirmedItem.getCorrectedItemName() != null &&
-                                 !confirmedItem.getCorrectedItemName().equals(confirmedItem.getOcrItemName()))
-                                 ? MatchMethod.MANUAL : MatchMethod.AUTO;
+                !confirmedItem.getCorrectedItemName().equals(confirmedItem.getOcrItemName()))
+                ? MatchMethod.MANUAL : MatchMethod.AUTO;
 
         // DocumentType에 따라 매치 타입 결정
         // SALES_RECEIPT(판매 영수증) → Menu (제품 판매, 재고 차감)
         // SUPPLY_INVOICE(공급 송장) → Inventory (원재료 입고, 재고 증가)
-        MatchType matchType = rawData.getDocumentType().name().equals("SALES_RECEIPT")
-                             ? MatchType.MENU
-                             : MatchType.INVENTORY;
+        MatchType matchType = isSalesReceipt ? MatchType.MENU : MatchType.INVENTORY;
+        Integer targetId = isSalesReceipt ? selectedProduct.getId() : selectedInventory.getId();
+        String targetName = isSalesReceipt ? selectedProduct.getName() : selectedInventory.getName();
 
         // OCR 결과 엔티티 생성
         OcrResultEntity ocrResult = OcrResultEntity.builder()
                 .store(store)
                 .rawDataId(rawData.getRawDataId())
                 .ocrItemName(confirmedItem.getCorrectedItemName() != null ?
-                           confirmedItem.getCorrectedItemName() : confirmedItem.getOcrItemName())
+                        confirmedItem.getCorrectedItemName() : confirmedItem.getOcrItemName())
                 .quantity(confirmedItem.getQuantity())
                 .price(confirmedItem.getPrice())
                 .matchType(matchType)
-                .targetId(selectedProduct.getId())
+                .targetId(targetId)
                 .totalAmount(BigDecimal.valueOf(confirmedItem.getTotalAmount()))
                 .matchMethod(matchMethod)
                 .build();
@@ -342,16 +354,16 @@ public class OcrProcessingService {
         OcrResultEntity savedResult = ocrResultRepository.save(ocrResult);
 
         // DocumentType에 따라 재고 업데이트 방식 결정
-        if (rawData.getDocumentType().name().equals("SALES_RECEIPT")) {
+        if (isSalesReceipt) {
             // 판매 영수증 → 재고 차감
             inventoryUpdateService.updateInventoryFromOcr(savedResult);
-            log.info("OCR 영수증 처리 완료 (재고 차감): {}, 제품: {}, 수량: {}",
-                    savedResult.getOcrId(), selectedProduct.getName(), confirmedItem.getQuantity());
+            log.info("OCR 영수증 처리 완료 (재고 차감): {}, 항목: {}, 수량: {}",
+                    savedResult.getOcrId(), targetName, confirmedItem.getQuantity());
         } else {
             // 공급 송장 → 재고 증가
             inventoryUpdateService.restockInventoryFromOcr(savedResult);
-            log.info("OCR 송장 처리 완료 (재고 증가): {}, 제품: {}, 수량: {}",
-                    savedResult.getOcrId(), selectedProduct.getName(), confirmedItem.getQuantity());
+            log.info("OCR 송장 처리 완료 (재고 증가): {}, 항목: {}, 수량: {}",
+                    savedResult.getOcrId(), targetName, confirmedItem.getQuantity());
         }
     }
 
@@ -361,6 +373,33 @@ public class OcrProcessingService {
     public OcrRawDataEntity getRawData(Integer rawDataId) {
         return ocrRawDataRepository.findByRawDataId(rawDataId)
                 .orElseThrow(() -> new IllegalArgumentException("원본 OCR 데이터를 찾을 수 없습니다: " + rawDataId));
+    }
+
+    /**
+     * 최근 OCR 원본 데이터를 조회한다.
+     */
+    public List<OcrRawDataResponseDto> getRecentRawData(Integer storeId, DocumentType documentType, int limit) {
+        int fetchLimit = Math.max(1, Math.min(limit, 100));
+
+        List<OcrRawDataEntity> rawDataEntities;
+        if (storeId != null && documentType != null) {
+            rawDataEntities = ocrRawDataRepository.findByStoreIdAndDocumentType(storeId, documentType);
+        } else if (storeId != null) {
+            rawDataEntities = ocrRawDataRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+        } else if (documentType != null) {
+            rawDataEntities = ocrRawDataRepository.findByDocumentType(documentType);
+        } else {
+            rawDataEntities = ocrRawDataRepository.findAll();
+        }
+
+        return rawDataEntities.stream()
+                .sorted(Comparator.comparing(
+                        OcrRawDataEntity::getCreatedAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ).reversed())
+                .limit(fetchLimit)
+                .map(OcrRawDataResponseDto::from)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -478,14 +517,14 @@ public class OcrProcessingService {
                     .store(store)
                     .documentType(requestDto.getDocumentType().name())
                     .status(OcrJobStatus.PENDING)
+                    .requestPayloadJson(objectMapper.writeValueAsString(requestDto))
                     .build();
 
             ocrJobRepository.save(jobEntity);
 
-            // 2. 비동기 처리 시작
-            processOcrDataAsync(jobUuid, requestDto);
+            log.info("배치 대기열에 OCR 데이터 작업 등록: jobUuid={}, storeId={}", jobUuid, requestDto.getStoreId());
 
-            // 3. 즉시 응답 반환
+            // 배치 스케줄러가 처리하므로 즉시 대기 상태 반환
             return OcrJobResponseDto.fromPending(jobUuid);
 
         } catch (Exception e) {
