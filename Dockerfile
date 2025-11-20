@@ -5,7 +5,7 @@ WORKDIR /app
 COPY --chown=gradle:gradle . .
 RUN gradle build --no-daemon -x test
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 

@@ -26,6 +26,7 @@ public class OcrConfirmationRequestDto {
         private Integer price;
         private Integer totalAmount;
         private Integer selectedProductId; // 사용자가 선택한 제품 ID
+        private Integer selectedInventoryId; // 공급 송장일 때 선택된 재고 ID
         private String correctedItemName; // 사용자가 수정한 아이템 이름 (선택사항)
     }
 }

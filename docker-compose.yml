@@ -1,4 +1,24 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: inforsion-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-inforsion_db}
+      MYSQL_USER: ${DB_USERNAME:-inforsion_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-inforsion_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - inforsion-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+
   mongodb:
     image: mongo:7.0
     container_name: inforsion-mongodb
@@ -37,17 +57,19 @@ services:
     build: .
     container_name: inforsion-app
     environment:
-      # RDS MySQL 설정
+      # 로컬 MySQL 설정 (도커)
+      DB_HOST: mysql
+      DB_PORT: 3306
       DB_NAME: ${DB_NAME:-inforsion_db}
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME:-inforsion_user}
+      DB_PASSWORD: ${DB_PASSWORD:-inforsion_password}
       # MongoDB 설정
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
       MONGODB_DATABASE: inforsion_ocr_db
       MONGODB_USERNAME: admin
       MONGODB_PASSWORD: adminpassword
-      SPRING_PROFILES_ACTIVE: rds
+      SPRING_PROFILES_ACTIVE: docker
       # AWS 설정
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -59,9 +81,15 @@ services:
       # Redis 설정
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # 카카오 API 설정
+      KAKAO_ADDRESS_SEARCH_URL: ${KAKAO_ADDRESS_SEARCH_URL}
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
+      KAKAO_ADDRESS_DEFAULT_SIZE: ${KAKAO_ADDRESS_DEFAULT_SIZE:-10}
     ports:
       - "8080:8080"
     depends_on:
+      mysql:
+        condition: service_healthy
       mongodb:
         condition: service_healthy
       redis:
@@ -73,6 +101,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  mysql_data:
   mongodb_data:
   redis_data:
 

@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.ingredient.controller;
 
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientCreateRequest;
+import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientProductLinkRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientUpdateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.response.IngredientResponse;
@@ -30,7 +31,7 @@ public class IngredientController {
 
     @Operation(
             summary = "재료 생성", 
-            description = "메뉴에 들어갈 새로운 재료를 생성합니다. 재료명과 상품 ID 조합은 유니크해야 합니다."
+            description = "재고만 먼저 등록하거나, 이미 있는 재고/메뉴와 함께 재료를 생성합니다. 상품과 바로 연결 시 상품 ID + 단위를 함께 전달해야 합니다."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -83,6 +84,42 @@ public class IngredientController {
             @Parameter(description = "재료 ID", required = true, example = "1")
             @PathVariable Integer ingredientId) {
         IngredientResponse response = ingredientService.getIngredient(ingredientId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "상품에 재료 연결",
+            description = "이미 등록된 재료를 이후에 특정 상품과 연결합니다. 재료량/단위를 함께 설정합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "연결 성공",
+                    content = @Content(schema = @Schema(implementation = IngredientResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 입력값",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "재료 또는 상품을 찾을 수 없음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "이미 상품에 연결된 재고",
+                    content = @Content
+            )
+    })
+    @PutMapping("/{ingredientId}/assign-product")
+    public ResponseEntity<IngredientResponse> assignProduct(
+            @Parameter(description = "재료 ID", required = true, example = "1")
+            @PathVariable Integer ingredientId,
+            @Parameter(description = "상품 연결 요청 데이터", required = true)
+            @Valid @RequestBody IngredientProductLinkRequest request) {
+        IngredientResponse response = ingredientService.linkIngredientToProduct(ingredientId, request);
         return ResponseEntity.ok(response);
     }
 

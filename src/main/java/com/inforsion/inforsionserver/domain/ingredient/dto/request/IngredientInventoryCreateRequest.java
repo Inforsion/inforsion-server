@@ -51,8 +51,7 @@ public class IngredientInventoryCreateRequest {
     @Schema(description = "마지막 입고일", example = "2025-01-10")
     private LocalDate lastRestockedDate;
 
-    @Schema(description = "재고가 속할 매장 ID", example = "1")
-    @NotNull(message = "매장 ID는 필수입니다")
+    @Schema(description = "재고가 속할 매장 ID (미제공 시 상품의 매장으로 설정)", example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     @Positive(message = "매장 ID는 양수여야 합니다")
     private Integer storeId;
 }

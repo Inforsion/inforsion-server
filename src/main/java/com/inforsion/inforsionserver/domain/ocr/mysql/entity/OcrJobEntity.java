@@ -56,6 +56,9 @@ public class OcrJobEntity {
     @Column(name = "matching_result_json", columnDefinition = "JSON")
     private String matchingResultJson;
 
+    @Column(name = "request_payload_json", columnDefinition = "JSON")
+    private String requestPayloadJson;
+
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
