@@ -1,6 +1,5 @@
 package com.inforsion.inforsionserver.domain.product.entity;
 
-import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -57,8 +55,4 @@ public class ProductEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity store;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<IngredientEntity> ingredients;
 }

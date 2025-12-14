@@ -76,31 +76,43 @@ public class InventoryUpdateService {
      * 개별 재료의 재고 차감
      */
     private void deductIngredientInventory(RecipesEntity recipe, Integer menuQuantity, OcrResultEntity ocrResult) {
-        InventoryEntity inventory = recipe.getInventory();
-        
+        // Recipe에서 Ingredient를 가져와서, 해당 Ingredient를 가진 Inventory 조회
+        Integer storeId = recipe.getStore().getId();
+        Integer ingredientId = recipe.getIngredient().getId();
+
+        // 해당 매장의 해당 재료에 대한 재고 조회 (가장 최근 것)
+        List<InventoryEntity> inventories = inventoryRepository.findByStoreIdAndIngredientIdOrderByCreatedAtDesc(storeId, ingredientId);
+
+        if (inventories.isEmpty()) {
+            log.warn("재고를 찾을 수 없습니다: 매장 ID {}, 재료 ID {}", storeId, ingredientId);
+            return;
+        }
+
+        InventoryEntity inventory = inventories.get(0); // 가장 최근 재고
+
         // 필요한 재료 수량 계산 (레시피의 1인분 * 주문 수량)
         BigDecimal requiredAmount = recipe.getAmountPerMenu().multiply(BigDecimal.valueOf(menuQuantity));
-        
+
         // 현재 재고 확인
         BigDecimal currentStock = inventory.getCurrentStock();
         if (currentStock.compareTo(requiredAmount) < 0) {
-            log.warn("재고 부족: {} (현재: {}, 필요: {})", 
+            log.warn("재고 부족: {} (현재: {}, 필요: {})",
                     inventory.getName(), currentStock, requiredAmount);
             // 재고 부족 알림 생성 (추후 AlertService 연동)
         }
-        
+
         // 재고 차감
         BigDecimal newStock = currentStock.subtract(requiredAmount);
         BigDecimal beforeQuantity = inventory.getCurrentStock();
-        
+
         inventory.setCurrentStock(newStock);
         inventoryRepository.save(inventory);
-        
+
         // 재고 변화 로그 생성
-        createInventoryLog(inventory, ocrResult, InventoryLogType.DEDUCTION, 
-                          requiredAmount.negate(), beforeQuantity, newStock, 
+        createInventoryLog(inventory, ocrResult, InventoryLogType.DEDUCTION,
+                          requiredAmount.negate(), beforeQuantity, newStock,
                           "OCR 매칭을 통한 자동 차감: " + ocrResult.getOcrItemName());
-        
+
         log.info("재료 재고 차감: {} ({} -> {})", inventory.getName(), beforeQuantity, newStock);
     }
 

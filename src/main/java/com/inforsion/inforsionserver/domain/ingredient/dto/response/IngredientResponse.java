@@ -1,81 +1,61 @@
 package com.inforsion.inforsionserver.domain.ingredient.dto.response;
 
 import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
-import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
-import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
-import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Schema(description = "재료 정보 응답 DTO")
+@Schema(description = "재료 응답")
 @Getter
 @Builder
 public class IngredientResponse {
 
-    @Schema(description = "재료 ID")
-    private Integer id;
+    @Schema(description = "재료 ID", example = "1")
+    private final Integer id;
 
-    @Schema(description = "재고 ID")
-    private Integer inventoryId;
+    @Schema(description = "매장 ID", example = "1")
+    private final Integer storeId;
 
-    @Schema(description = "재고명")
-    private String inventoryName;
+    @Schema(description = "매장명", example = "강남점")
+    private final String storeName;
 
-    @Schema(description = "상품 1개당 필요한 재료량")
-    private BigDecimal amountPerProduct;
+    @Schema(description = "재료명", example = "우유")
+    private final String name;
 
-    @Schema(description = "단위")
-    private String unit;
+    @Schema(description = "단위", example = "ml")
+    private final String unit;
 
-    @Schema(description = "재료 설명")
-    private String description;
+    @Schema(description = "기본 유통기한(일)", example = "7")
+    private final Integer defaultExpiryDays;
 
+    @Schema(description = "재료 설명", example = "서울우유 1L")
+    private final String description;
 
-    @Schema(description = "활성화 상태")
-    private Boolean isActive;
+    @Schema(description = "이미지 URL")
+    private final String imageUrl;
 
-    @Schema(description = "상품 ID")
-    private Integer productId;
+    @Schema(description = "활성 상태", example = "true")
+    private final Boolean isActive;
 
-    @Schema(description = "상품명")
-    private String productName;
+    @Schema(description = "생성일시")
+    private final LocalDateTime createdAt;
 
-    @Schema(description = "가게 ID")
-    private Integer storeId;
+    @Schema(description = "수정일시")
+    private final LocalDateTime updatedAt;
 
-    @Schema(description = "가게명")
-    private String storeName;
-
-    @Schema(description = "생성 일시")
-    private LocalDateTime createdAt;
-
-    @Schema(description = "수정 일시")
-    private LocalDateTime updatedAt;
-
-    /**
-     * Entity에서 Response로 변환
-     */
     public static IngredientResponse from(IngredientEntity entity) {
-        ProductEntity product = entity.getProduct();
-        InventoryEntity inventory = entity.getInventory();
-        StoreEntity store = product != null ? product.getStore() : (inventory != null ? inventory.getStore() : null);
-
         return IngredientResponse.builder()
                 .id(entity.getId())
-                .inventoryId(inventory != null ? inventory.getId() : null)
-                .inventoryName(inventory != null ? inventory.getName() : null)
-                .amountPerProduct(entity.getAmountPerProduct())
+                .storeId(entity.getStore() != null ? entity.getStore().getId() : null)
+                .storeName(entity.getStore() != null ? entity.getStore().getName() : null)
+                .name(entity.getName())
                 .unit(entity.getUnit())
+                .defaultExpiryDays(entity.getDefaultExpiryDays())
                 .description(entity.getDescription())
+                .imageUrl(entity.getImageUrl())
                 .isActive(entity.getIsActive())
-                .productId(product != null ? product.getId() : null)
-                .productName(product != null ? product.getName() : null)
-                .storeId(store != null ? store.getId() : null)
-                .storeName(store != null ? store.getName() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

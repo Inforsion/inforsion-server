@@ -11,4 +11,6 @@ import java.util.List;
 @Repository
 public interface InventoryRepository extends JpaRepository<InventoryEntity, Integer>,
         QuerydslPredicateExecutor<InventoryEntity>, InventoryRepositoryCustom {
+
+    List<InventoryEntity> findByStoreIdAndIngredientIdOrderByCreatedAtDesc(Integer storeId, Integer ingredientId);
 }

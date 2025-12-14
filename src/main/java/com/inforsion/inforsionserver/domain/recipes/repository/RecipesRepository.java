@@ -17,17 +17,17 @@ public interface RecipesRepository extends JpaRepository<RecipesEntity, Integer>
 
     List<RecipesEntity> findByMenuIdAndIsActive(Integer menuId, Boolean isActive);
 
-    List<RecipesEntity> findByInventoryIdAndIsActive(Integer inventoryId, Boolean isActive);
+    List<RecipesEntity> findByIngredientIdAndIsActive(Integer ingredientId, Boolean isActive);
 
     List<RecipesEntity> findByMenuId(Integer menuId);
 
-    List<RecipesEntity> findByInventoryId(Integer inventoryId);
+    List<RecipesEntity> findByIngredientId(Integer ingredientId);
 
     @Query("SELECT r FROM RecipesEntity r WHERE r.store.id = :storeId AND r.isActive = true")
     List<RecipesEntity> findActiveByStoreId(@Param("storeId") Integer storeId);
 
-    @Query("SELECT r FROM RecipesEntity r WHERE r.menu.id = :menuId AND r.inventory.id = :inventoryId")
-    List<RecipesEntity> findByMenuIdAndInventoryId(@Param("menuId") Integer menuId, @Param("inventoryId") Integer inventoryId);
+    @Query("SELECT r FROM RecipesEntity r WHERE r.menu.id = :menuId AND r.ingredient.id = :ingredientId")
+    List<RecipesEntity> findByMenuIdAndIngredientId(@Param("menuId") Integer menuId, @Param("ingredientId") Integer ingredientId);
 
     @Query("SELECT r FROM RecipesEntity r WHERE r.store.id = :storeId")
     List<RecipesEntity> findByStoreId(@Param("storeId") Integer storeId);

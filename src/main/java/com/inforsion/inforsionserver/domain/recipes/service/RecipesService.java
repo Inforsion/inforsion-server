@@ -1,7 +1,7 @@
 package com.inforsion.inforsionserver.domain.recipes.service;
 
-import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
-import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
+import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
+import com.inforsion.inforsionserver.domain.ingredient.repository.IngredientRepository;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
 import com.inforsion.inforsionserver.domain.recipes.dto.request.RecipesRequestDto;
@@ -26,7 +26,7 @@ public class RecipesService {
     private final RecipesRepository recipesRepository;
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
-    private final InventoryRepository inventoryRepository;
+    private final IngredientRepository ingredientRepository;
 
     @Transactional
     public RecipesResponseDto createRecipes(@Valid RecipesRequestDto request) {
@@ -34,15 +34,15 @@ public class RecipesService {
                 .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다. storeId=" + request.getStoreId()));
         ProductEntity menu = productRepository.findById(request.getMenuId())
                 .orElseThrow(() -> new IllegalArgumentException("메뉴를 찾을 수 없습니다. menuId=" + request.getMenuId()));
-        InventoryEntity inventory = inventoryRepository.findById(request.getInventoryId())
-                .orElseThrow(() -> new IllegalArgumentException("재고를 찾을 수 없습니다. inventoryId=" + request.getInventoryId()));
+        IngredientEntity ingredient = ingredientRepository.findById(request.getInventoryId())
+                .orElseThrow(() -> new IllegalArgumentException("재료를 찾을 수 없습니다. ingredientId=" + request.getInventoryId()));
 
         Boolean isActive = Optional.ofNullable(request.getIsActive()).orElse(true);
 
         RecipesEntity entity = RecipesEntity.builder()
                 .store(store)
                 .menu(menu)
-                .inventory(inventory)
+                .ingredient(ingredient)
                 .name(request.getName())
                 .amountPerMenu(request.getAmountPerMenu())
                 .unit(request.getUnit())
@@ -93,10 +93,10 @@ public class RecipesService {
             recipes.setMenu(menu);
         }
 
-        if (request.getInventoryId() != null && (recipes.getInventory() == null || !request.getInventoryId().equals(recipes.getInventory().getId()))) {
-            InventoryEntity inventory = inventoryRepository.findById(request.getInventoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("재고를 찾을 수 없습니다. inventoryId=" + request.getInventoryId()));
-            recipes.setInventory(inventory);
+        if (request.getInventoryId() != null && (recipes.getIngredient() == null || !request.getInventoryId().equals(recipes.getIngredient().getId()))) {
+            IngredientEntity ingredient = ingredientRepository.findById(request.getInventoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("재료를 찾을 수 없습니다. ingredientId=" + request.getInventoryId()));
+            recipes.setIngredient(ingredient);
         }
 
         RecipesEntity updated = recipesRepository.save(recipes);
