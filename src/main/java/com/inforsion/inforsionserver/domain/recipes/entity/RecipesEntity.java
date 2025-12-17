@@ -58,15 +58,6 @@ public class RecipesEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "create_at")
-    private LocalDateTime legacyCreatedAt;
-
-    @Column(name = "update_at")
-    private LocalDateTime legacyUpdatedAt;
-
-    @Column(name = "views")
-    private String views;
-
     public void deactivate() {
         this.isActive = false;
     }

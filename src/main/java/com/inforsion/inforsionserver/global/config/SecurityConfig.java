@@ -46,13 +46,9 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            .exceptionHandling(configurer ->
-                configurer.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-            )
-
-            // 가게 관련 API는 인증 필요, 나머지는 허용
+            // Order 도메인만 인증 필요, 나머지는 허용
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/stores/**").authenticated()
+                .requestMatchers("/api/v1/order/**", "/api/v1/orders/**").authenticated()
                 .anyRequest().permitAll()
             )
 

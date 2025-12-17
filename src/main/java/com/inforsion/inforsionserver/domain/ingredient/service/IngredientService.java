@@ -45,7 +45,9 @@ public class IngredientService {
                 .store(store)
                 .name(request.getName())
                 .unit(request.getUnit())
-                .defaultExpiryDays(request.getDefaultExpiryDays())
+                .stockPrice(request.getStockPrice())
+                .unitCapacity(request.getUnitCapacity())
+                .stockQuantity(request.getStockQuantity())
                 .isActive(true)
                 .build();
 
@@ -93,14 +95,13 @@ public class IngredientService {
 
         ingredient.update(
                 request.getName(),
-                request.getUnit(),
-                request.getDefaultExpiryDays(),
-                null
+                null, // unit
+                request.getStockPrice(),
+                request.getUnitCapacity(),
+                request.getStockQuantity(),
+                null, // defaultExpiryDays
+                null  // description
         );
-
-        if (request.getIsActive() != null) {
-            ingredient.updateActiveStatus(request.getIsActive());
-        }
 
         return IngredientResponse.from(ingredient);
     }

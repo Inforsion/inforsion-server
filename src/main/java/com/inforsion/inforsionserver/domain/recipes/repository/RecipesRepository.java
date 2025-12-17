@@ -1,6 +1,9 @@
 package com.inforsion.inforsionserver.domain.recipes.repository;
 
+import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
+import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
+import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +34,6 @@ public interface RecipesRepository extends JpaRepository<RecipesEntity, Integer>
 
     @Query("SELECT r FROM RecipesEntity r WHERE r.store.id = :storeId")
     List<RecipesEntity> findByStoreId(@Param("storeId") Integer storeId);
+
+    boolean existsByStoreAndMenuAndIngredient(StoreEntity store, ProductEntity menu, IngredientEntity ingredient);
 }

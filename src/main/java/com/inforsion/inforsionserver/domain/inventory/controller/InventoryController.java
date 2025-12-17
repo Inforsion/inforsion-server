@@ -131,4 +131,27 @@ public class InventoryController {
         }
         return result;
     }
+
+    @Operation(
+            summary = "포함 메뉴 추가",
+            description = "재고의 재료를 사용하는 메뉴(제품)를 추가합니다. Product 데이터가 없어도 사용 가능합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "포함 메뉴 추가 성공"),
+            @ApiResponse(responseCode = "404", description = "재고를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/{inventoryId}/products")
+    public ResponseEntity<Map<String, Object>> addProductsToInventory(
+            @Parameter(description = "재고 ID", required = true) @PathVariable Integer inventoryId,
+            @Parameter(description = "추가할 제품 ID 목록", required = true) @RequestBody Map<String, List<Integer>> request
+    ) {
+        List<Integer> productIds = request.get("productIds");
+        if (productIds == null || productIds.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "제품 ID 목록이 비어있습니다."));
+        }
+
+        inventoryService.addProductsToIngredient(inventoryId, productIds);
+        return ResponseEntity.ok(Map.of("message", "포함 메뉴가 추가되었습니다.", "count", productIds.size()));
+    }
 }

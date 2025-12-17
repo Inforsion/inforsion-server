@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Schema(description = "재료 수정 요청")
 @Getter
 @Builder
@@ -16,12 +18,12 @@ public class IngredientUpdateRequest {
     @Schema(description = "재료명", example = "우유")
     private String name;
 
-    @Schema(description = "단위", example = "ml")
-    private String unit;
+    @Schema(description = "재고 가격", example = "3000.00")
+    private BigDecimal stockPrice;
 
-    @Schema(description = "기본 유통기한(일)", example = "7")
-    private Integer defaultExpiryDays;
+    @Schema(description = "1개당 재고 용량", example = "1000.00")
+    private BigDecimal unitCapacity;
 
-    @Schema(description = "활성 상태", example = "true")
-    private Boolean isActive;
+    @Schema(description = "재고 수", example = "10")
+    private Integer stockQuantity;
 }

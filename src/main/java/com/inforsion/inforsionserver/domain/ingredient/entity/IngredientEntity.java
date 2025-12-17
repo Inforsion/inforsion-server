@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -35,6 +36,15 @@ public class IngredientEntity {
     @Column(name = "unit", nullable = false, length = 20)
     private String unit; // 단위 (g, ml, 개 등)
 
+    @Column(name = "stock_price", precision = 12, scale = 2)
+    private BigDecimal stockPrice; // 재고 가격
+
+    @Column(name = "unit_capacity", precision = 10, scale = 2)
+    private BigDecimal unitCapacity; // 1개당 재고 용량
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity; // 재고 수
+
     @Column(name = "default_expiry_days")
     private Integer defaultExpiryDays; // 기본 유통기한 (일)
 
@@ -63,9 +73,13 @@ public class IngredientEntity {
     /**
      * 재료 정보 업데이트
      */
-    public void update(String name, String unit, Integer defaultExpiryDays, String description) {
+    public void update(String name, String unit, BigDecimal stockPrice, BigDecimal unitCapacity,
+                      Integer stockQuantity, Integer defaultExpiryDays, String description) {
         if (name != null) this.name = name;
         if (unit != null) this.unit = unit;
+        if (stockPrice != null) this.stockPrice = stockPrice;
+        if (unitCapacity != null) this.unitCapacity = unitCapacity;
+        if (stockQuantity != null) this.stockQuantity = stockQuantity;
         if (defaultExpiryDays != null) this.defaultExpiryDays = defaultExpiryDays;
         if (description != null) this.description = description;
     }

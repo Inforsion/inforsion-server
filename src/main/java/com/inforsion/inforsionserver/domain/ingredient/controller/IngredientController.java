@@ -23,7 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "Ingredient", description = "재료 마스터 관리 API")
+@Tag(name = "Ingredient", description = "재료 관리 API")
 @RestController
 @RequestMapping("/api/v1/ingredients")
 @RequiredArgsConstructor
@@ -98,7 +98,7 @@ public class IngredientController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "재료 이미지 업로드", description = "재료 이미지를 S3에 업로드합니다.")
+    @Operation(summary = "재료 이미지 업로드", description = "ingredients 경로로 S3에 업로드합니다.")
     @PostMapping(value = "/{ingredientId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<IngredientResponse> uploadImage(
             @Parameter(description = "재료 ID", required = true) @PathVariable Integer ingredientId,
@@ -108,7 +108,7 @@ public class IngredientController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "재료 이미지 수정", description = "기존 이미지를 삭제하고 새 이미지를 업로드합니다.")
+    @Operation(summary = "재료 이미지 수정", description = "기존 이미지를 삭제하고 새 파일을 업로드합니다.")
     @PutMapping(value = "/{ingredientId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<IngredientResponse> updateImage(
             @Parameter(description = "재료 ID", required = true) @PathVariable Integer ingredientId,
@@ -118,7 +118,7 @@ public class IngredientController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "재료 이미지 조회", description = "재료 이미지 URL을 반환합니다.")
+    @Operation(summary = "재료 이미지 조회", description = "S3 URL을 반환합니다. 이미지가 없으면 404를 반환합니다.")
     @GetMapping("/{ingredientId}/image")
     public ResponseEntity<IngredientResponse> getImage(
             @Parameter(description = "재료 ID", required = true) @PathVariable Integer ingredientId
@@ -127,7 +127,7 @@ public class IngredientController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "재료 이미지 삭제", description = "S3에서 이미지를 삭제하고 DB의 이미지 URL을 비웁니다.")
+    @Operation(summary = "재료 이미지 삭제", description = "S3에서 파일을 삭제하고 DB의 이미지 URL을 비웁니다.")
     @DeleteMapping("/{ingredientId}/image")
     public ResponseEntity<Void> deleteImage(
             @Parameter(description = "재료 ID", required = true) @PathVariable Integer ingredientId

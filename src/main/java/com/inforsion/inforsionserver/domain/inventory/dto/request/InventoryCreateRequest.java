@@ -1,6 +1,7 @@
 package com.inforsion.inforsionserver.domain.inventory.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,9 +22,14 @@ public class InventoryCreateRequest {
     @NotNull(message = "매장 ID는 필수입니다.")
     private Integer storeId;
 
-    @Schema(description = "재료 ID", example = "1", required = true)
-    @NotNull(message = "재료 ID는 필수입니다.")
+    @Schema(description = "재료 ID (선택 사항, 없으면 ingredientName으로 자동 생성)", example = "1")
     private Integer ingredientId;
+
+    @Schema(description = "재료명 (ingredientId가 없을 때 필수)", example = "우유")
+    private String ingredientName;
+
+    @Schema(description = "단위 (ingredientId가 없을 때 필수)", example = "ml")
+    private String unit;
 
     @Schema(description = "현재 재고량", example = "1000.00", required = true)
     @NotNull(message = "현재 재고량은 필수입니다.")

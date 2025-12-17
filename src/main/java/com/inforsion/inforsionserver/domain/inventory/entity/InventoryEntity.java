@@ -34,10 +34,10 @@ public class InventoryEntity {
     private BigDecimal currentStock; // 현재 재료량
 
     @Column(name = "min_stock_level")
-    private BigDecimal minStock; // 최대 재고 수준
+    private BigDecimal minStock; // 최소 재고 수준
 
     @Column(name = "max_stock_level")
-    private BigDecimal maxStock; // 최소 재고 수준
+    private BigDecimal maxStock; // 최대 재고 수준
 
     @Column(name = "unit_cost", nullable = false, length = 20)
     private BigDecimal unitCost; // 단위 당 가격
