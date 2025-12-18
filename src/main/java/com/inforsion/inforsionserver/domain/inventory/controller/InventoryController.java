@@ -1,7 +1,9 @@
 package com.inforsion.inforsionserver.domain.inventory.controller;
 
 import com.inforsion.inforsionserver.domain.inventory.dto.ExpiringInventoryDto;
-import com.inforsion.inforsionserver.domain.inventory.dto.InventoryDto;
+import com.inforsion.inforsionserver.domain.inventory.dto.request.InventoryCreateRequest;
+import com.inforsion.inforsionserver.domain.inventory.dto.request.InventoryUpdateRequest;
+import com.inforsion.inforsionserver.domain.inventory.dto.response.InventoryResponse;
 import com.inforsion.inforsionserver.domain.inventory.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,12 +43,12 @@ public class InventoryController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/{storeId}")
-    public ResponseEntity<Page<InventoryDto>> getInventories(
+    public ResponseEntity<Page<InventoryResponse>> getInventories(
             @Parameter(description = "매장 ID", required = true)
             @PathVariable Integer storeId,
-            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<InventoryDto> response = inventoryService.getInventories(storeId, pageable);
+        Page<InventoryResponse> response = inventoryService.getInventories(storeId, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -61,14 +63,14 @@ public class InventoryController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PutMapping("/{inventoryId}")
-    public ResponseEntity<InventoryDto> updateTransaction(
+    public ResponseEntity<InventoryResponse> updateTransaction(
             @Parameter(description = "재고 ID", required = true, example = "1")
             @PathVariable Integer inventoryId,
             @Parameter(description = "재고 수정 요청 데이터", required = true)
-            @Valid @RequestBody InventoryDto inventoryDto
+            @Valid @RequestBody InventoryUpdateRequest request
     ) {
-        InventoryDto updateInventory = inventoryService.updateInventory(inventoryId, inventoryDto);
-        return ResponseEntity.ok(inventoryDto);
+        InventoryResponse updated = inventoryService.updateInventory(inventoryId, request);
+        return ResponseEntity.ok(updated);
     }
 
     @Operation(
@@ -81,7 +83,7 @@ public class InventoryController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{inventoryId}")
-    public ResponseEntity<InventoryDto> deleteInventory(
+    public ResponseEntity<Void> deleteInventory(
             @Parameter(description = "삭제할 재고 ID", required = true, example = "1")
             @PathVariable("inventoryId") Integer inventoryId
     ) {
@@ -100,11 +102,11 @@ public class InventoryController {
     })
 
     @PostMapping
-    public ResponseEntity<InventoryDto> createInventory(
+    public ResponseEntity<InventoryResponse> createInventory(
             @Parameter(description = "재고 생성 요청 데이터", required = true)
-            @Valid @RequestBody InventoryDto inventoryDto
+            @Valid @RequestBody InventoryCreateRequest request
     ) {
-        InventoryDto created = inventoryService.createInventory(inventoryDto);
+        InventoryResponse created = inventoryService.createInventory(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -128,5 +130,28 @@ public class InventoryController {
             result.put(d, inventoryService.getExpiringItems(d));
         }
         return result;
+    }
+
+    @Operation(
+            summary = "포함 메뉴 추가",
+            description = "재고의 재료를 사용하는 메뉴(제품)를 추가합니다. Product 데이터가 없어도 사용 가능합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "포함 메뉴 추가 성공"),
+            @ApiResponse(responseCode = "404", description = "재고를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/{inventoryId}/products")
+    public ResponseEntity<Map<String, Object>> addProductsToInventory(
+            @Parameter(description = "재고 ID", required = true) @PathVariable Integer inventoryId,
+            @Parameter(description = "추가할 제품 ID 목록", required = true) @RequestBody Map<String, List<Integer>> request
+    ) {
+        List<Integer> productIds = request.get("productIds");
+        if (productIds == null || productIds.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "제품 ID 목록이 비어있습니다."));
+        }
+
+        inventoryService.addProductsToIngredient(inventoryId, productIds);
+        return ResponseEntity.ok(Map.of("message", "포함 메뉴가 추가되었습니다.", "count", productIds.size()));
     }
 }

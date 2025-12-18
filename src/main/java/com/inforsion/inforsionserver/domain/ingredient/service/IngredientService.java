@@ -1,28 +1,21 @@
 package com.inforsion.inforsionserver.domain.ingredient.service;
 
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientCreateRequest;
-import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientInventoryCreateRequest;
-import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientProductLinkRequest;
-import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientSearchRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.request.IngredientUpdateRequest;
 import com.inforsion.inforsionserver.domain.ingredient.dto.response.IngredientResponse;
 import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
 import com.inforsion.inforsionserver.domain.ingredient.repository.IngredientRepository;
-import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
-import com.inforsion.inforsionserver.domain.inventory.repository.InventoryRepository;
-import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
-import com.inforsion.inforsionserver.domain.product.repository.ProductRepository;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import com.inforsion.inforsionserver.domain.store.repository.StoreRepository;
-import com.inforsion.inforsionserver.global.error.exception.IngredientNotFoundException;
-import com.inforsion.inforsionserver.global.error.exception.ProductNotFoundException;
-import com.inforsion.inforsionserver.global.error.exception.DuplicateIngredientException;
+import com.inforsion.inforsionserver.global.error.code.ErrorCode;
+import com.inforsion.inforsionserver.global.error.exception.BusinessException;
+import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -30,222 +23,159 @@ import java.util.stream.Collectors;
 public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
-    private final ProductRepository productRepository;
-    private final InventoryRepository inventoryRepository;
     private final StoreRepository storeRepository;
+    private final S3FileUploadService s3FileUploadService;
 
     /**
-     * 새로운 재료를 생성합니다.
-     * 
-     * 상품 ID와 재고 ID를 기반으로 유효한지 확인하고, 동일한 상품에 같은 재고가 이미 사용되고 있는지 검증합니다.
-     * 상품 ID와 재고 ID 조합은 유니크해야 하므로 중복 시 예외를 발생시킵니다.
-     * 
-     * @param request 재료 생성 요청 DTO (재고 ID, 사용량, 단위, 설명, 상품 ID 포함)
-     * @return 생성된 재료 정보 DTO
-     * @throws ProductNotFoundException 상품이 존재하지 않는 경우
-     * @throws RuntimeException 재고가 존재하지 않는 경우
-     * @throws DuplicateIngredientException 동일한 상품에 같은 재고가 이미 사용되는 경우
+     * 재료 생성
      */
     @Transactional
     public IngredientResponse createIngredient(IngredientCreateRequest request) {
-        validateInventoryRequest(request);
+        StoreEntity store = storeRepository.findById(request.getStoreId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.STORE_NOT_FOUND,
+                        "매장을 찾을 수 없습니다. ID: " + request.getStoreId()));
 
-        ProductEntity product = null;
-        if (request.getProductId() != null) {
-            product = productRepository.findById(request.getProductId())
-                    .orElseThrow(ProductNotFoundException::new);
-            if (request.getAmountPerProduct() == null || request.getUnit() == null) {
-                throw new IllegalArgumentException("상품과 연결하려면 재료량과 단위를 함께 전달해야 합니다.");
-            }
-        }
-
-        InventoryEntity inventory = resolveInventory(request, product);
-
-        if (product != null && ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
-            throw new DuplicateIngredientException();
+        // 같은 매장에 같은 이름의 재료가 이미 존재하는지 확인
+        if (ingredientRepository.findByStoreIdAndName(request.getStoreId(), request.getName()).isPresent()) {
+            throw new BusinessException(ErrorCode.INGREDIENT_ALREADY_EXISTS,
+                    "이미 존재하는 재료명입니다: " + request.getName());
         }
 
         IngredientEntity ingredient = IngredientEntity.builder()
-                .amountPerProduct(request.getAmountPerProduct())
+                .store(store)
+                .name(request.getName())
                 .unit(request.getUnit())
-                .description(request.getDescription())
-                .product(product)
-                .inventory(inventory)
+                .stockPrice(request.getStockPrice())
+                .unitCapacity(request.getUnitCapacity())
+                .stockQuantity(request.getStockQuantity())
+                .isActive(true)
                 .build();
 
-        IngredientEntity savedIngredient = ingredientRepository.save(ingredient);
-        return IngredientResponse.from(savedIngredient);
+        IngredientEntity saved = ingredientRepository.save(ingredient);
+        return IngredientResponse.from(saved);
     }
 
     /**
-     * 특정 ID의 재료 상세 정보를 조회합니다.
-     * 
-     * @param ingredientId 조회할 재료의 ID
-     * @return 재료 상세 정보 DTO
-     * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
+     * 재료 단건 조회
      */
-    @Transactional
     public IngredientResponse getIngredient(Integer ingredientId) {
-        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(IngredientNotFoundException::new);
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
         return IngredientResponse.from(ingredient);
     }
 
     /**
-     * 상품과 연결되지 않은 재료를 나중에 메뉴와 연결합니다.
+     * 매장별 재료 목록 조회 (페이징)
      */
-    @Transactional
-    public IngredientResponse linkIngredientToProduct(Integer ingredientId, IngredientProductLinkRequest request) {
-        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(IngredientNotFoundException::new);
-
-        ProductEntity product = productRepository.findById(request.getProductId())
-                .orElseThrow(ProductNotFoundException::new);
-
-        InventoryEntity inventory = ingredient.getInventory();
-        if (inventory != null && ingredientRepository.existsByProductIdAndInventoryId(product.getId(), inventory.getId())) {
-            throw new DuplicateIngredientException();
-        }
-
-        ingredient.assignProduct(product, request.getAmountPerProduct(), request.getUnit(), request.getDescription());
-        return IngredientResponse.from(ingredient);
+    public Page<IngredientResponse> getIngredientsByStore(Integer storeId, Pageable pageable) {
+        Page<IngredientEntity> ingredients = ingredientRepository.findByStoreIdAndIsActive(storeId, true)
+                .stream()
+                .skip(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .collect(java.util.stream.Collectors.collectingAndThen(
+                        java.util.stream.Collectors.toList(),
+                        list -> new org.springframework.data.domain.PageImpl<>(list, pageable, list.size())
+                ));
+        return ingredients.map(IngredientResponse::from);
     }
 
     /**
-     * 특정 상품에 사용되는 모든 재료를 조회합니다.
-     * 
-     * 메뉴 구성 확인, 레시피 관리에 활용됩니다.
-     * 
-     * @param productId 상품 ID
-     * @return 해당 상품에 사용되는 재료 목록
-     * @throws ProductNotFoundException 상품이 존재하지 않는 경우
-     */
-    public List<IngredientResponse> getIngredientsByProduct(Integer productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ProductNotFoundException();
-        }
-
-        return ingredientRepository.findByProductId(productId).stream()
-                .map(IngredientResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 동적 조건을 사용하여 재료를 검색합니다.
-     * 
-     * SearchRequest의 필드 중 null이 아닌 값들을 조건으로 사용하여 유연한 검색을 제공합니다.
-     * 재료명 부분 검색, 상품별 필터링, 단위별/활성화 상태별 필터링이 가능합니다.
-     * 
-     * @param request 검색 조건 DTO (재료명, 상품ID, 단위, 활성화 상태)
-     * @return 검색 조건에 맞는 재료 목록 (생성일시 역순)
-     */
-    public List<IngredientResponse> searchIngredients(IngredientSearchRequest request) {
-        return ingredientRepository.searchIngredients(request).stream()
-                .map(IngredientResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 기존 재료의 정보를 수정합니다.
-     * 
-     * 재고 ID 변경 시 동일한 상품에 같은 재고가 이미 사용되고 있는지 검증합니다.
-     * null이 아닌 필드만 업데이트되며, 이미지는 별도 메서드로 처리합니다.
-     * 
-     * @param ingredientId 수정할 재료의 ID
-     * @param request 수정할 정보 DTO (재고 ID, 사용량, 단위, 설명, 활성화 상태)
-     * @return 수정된 재료 정보 DTO
-     * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
-     * @throws DuplicateIngredientException 수정하려는 재고가 동일한 상품에 이미 사용되는 경우
+     * 재료 수정
      */
     @Transactional
     public IngredientResponse updateIngredient(Integer ingredientId, IngredientUpdateRequest request) {
-        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(IngredientNotFoundException::new);
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
 
-        // 재고 ID 변경 시 중복 체크
-        Integer currentInventoryId = ingredient.getInventory() != null ? ingredient.getInventory().getId() : null;
-        if (request.getInventoryId() != null &&
-            !request.getInventoryId().equals(currentInventoryId)) {
-
-            if (ingredient.getProduct() != null && ingredientRepository.existsByProductIdAndInventoryId(
-                ingredient.getProduct().getId(), request.getInventoryId())) {
-                throw new DuplicateIngredientException();
+        // 재료명이 변경되는 경우 중복 체크
+        if (request.getName() != null && !request.getName().equals(ingredient.getName())) {
+            if (ingredientRepository.findByStoreIdAndName(ingredient.getStore().getId(), request.getName()).isPresent()) {
+                throw new BusinessException(ErrorCode.INGREDIENT_ALREADY_EXISTS,
+                        "이미 존재하는 재료명입니다: " + request.getName());
             }
-            
-            // 새로운 재고 엔티티 조회
-            InventoryEntity newInventory = inventoryRepository.findById(request.getInventoryId())
-                    .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
-            ingredient.updateInventory(newInventory);
         }
 
         ingredient.update(
-                request.getAmountPerProduct(),
-                request.getUnit(),
-                request.getDescription()
+                request.getName(),
+                null, // unit
+                request.getStockPrice(),
+                request.getUnitCapacity(),
+                request.getStockQuantity(),
+                null, // defaultExpiryDays
+                null  // description
         );
 
-        if (request.getIsActive() != null) {
-            ingredient.updateActiveStatus(request.getIsActive());
+        return IngredientResponse.from(ingredient);
+    }
+
+    /**
+     * 재료 삭제 (소프트 삭제 - isActive = false)
+     */
+    @Transactional
+    public void deleteIngredient(Integer ingredientId) {
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
+        ingredient.updateActiveStatus(false);
+    }
+
+    /**
+     * 이미지 업로드
+     */
+    @Transactional
+    public IngredientResponse uploadImage(Integer ingredientId, MultipartFile imageFile) {
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
+        String imageUrl = s3FileUploadService.uploadImageFile(imageFile, "ingredients");
+        ingredient.updateImageUrl(imageUrl);
+        return IngredientResponse.from(ingredient);
+    }
+
+    /**
+     * 이미지 수정 (기존 이미지 삭제 후 새 이미지 업로드)
+     */
+    @Transactional
+    public IngredientResponse updateImage(Integer ingredientId, MultipartFile imageFile) {
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
+
+        // 기존 이미지가 있으면 삭제
+        if (ingredient.getImageUrl() != null) {
+            s3FileUploadService.deleteFile(ingredient.getImageUrl());
+        }
+
+        String imageUrl = s3FileUploadService.uploadImageFile(imageFile, "ingredients");
+        ingredient.updateImageUrl(imageUrl);
+        return IngredientResponse.from(ingredient);
+    }
+
+    /**
+     * 이미지 조회
+     */
+    public IngredientResponse getImage(Integer ingredientId) {
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
+
+        if (ingredient.getImageUrl() == null) {
+            throw new BusinessException(ErrorCode.FILE_NOT_FOUND,
+                    "해당 재료에 등록된 이미지가 없습니다.");
         }
 
         return IngredientResponse.from(ingredient);
     }
 
-    private void validateInventoryRequest(IngredientCreateRequest request) {
-        if (request.getInventoryId() == null && request.getNewInventory() == null) {
-            throw new IllegalArgumentException("재고 ID 또는 신규 재고 정보 중 하나는 반드시 제공되어야 합니다.");
+    /**
+     * 이미지 삭제
+     */
+    @Transactional
+    public void deleteImage(Integer ingredientId) {
+        IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
+
+        if (ingredient.getImageUrl() != null) {
+            s3FileUploadService.deleteFile(ingredient.getImageUrl());
+            ingredient.updateImageUrl(null);
         }
-
-        if (request.getInventoryId() != null && request.getNewInventory() != null) {
-            throw new IllegalArgumentException("재고 ID와 신규 재고 정보를 동시에 전달할 수 없습니다.");
-        }
-    }
-
-    private InventoryEntity resolveInventory(IngredientCreateRequest request, ProductEntity product) {
-        if (request.getInventoryId() != null) {
-            return inventoryRepository.findById(request.getInventoryId())
-                    .orElseThrow(() -> new RuntimeException("재고를 찾을 수 없습니다"));
-        }
-
-        IngredientInventoryCreateRequest newInventory = request.getNewInventory();
-        StoreEntity store = newInventory.getStoreId() != null
-                ? storeRepository.findById(newInventory.getStoreId())
-                    .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다"))
-                : product != null
-                    ? product.getStore()
-                    : null; // storeId 없고 상품도 없으면 에러 처리
-
-        if (store == null) {
-            throw new IllegalArgumentException("매장을 찾을 수 없습니다. storeId 또는 상품 정보를 제공해야 합니다.");
-        }
-
-        InventoryEntity inventory = InventoryEntity.builder()
-                .name(newInventory.getName())
-                .currentStock(newInventory.getCurrentStock())
-                .minStock(newInventory.getMinStock())
-                .maxStock(newInventory.getMaxStock())
-                .unit(newInventory.getUnit())
-                .unitCost(newInventory.getUnitCost())
-                .expiryDate(newInventory.getExpiryDate())
-                .lastRestockedDate(newInventory.getLastRestockedDate())
-                .store(store)
-                .build();
-
-        return inventoryRepository.save(inventory);
     }
 
     /**
-     * 재료를 삭제합니다.
-     * 
-     * @param ingredientId 삭제할 재료의 ID
-     * @throws IngredientNotFoundException 재료가 존재하지 않는 경우
+     * 재료 조회 또는 예외 발생
      */
-    @Transactional
-    public void deleteIngredient(Integer ingredientId) {
-        IngredientEntity ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(IngredientNotFoundException::new);
-
-        ingredientRepository.delete(ingredient);
+    private IngredientEntity getIngredientOrThrow(Integer ingredientId) {
+        return ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INGREDIENT_NOT_FOUND,
+                        "재료를 찾을 수 없습니다. ID: " + ingredientId));
     }
-
 }

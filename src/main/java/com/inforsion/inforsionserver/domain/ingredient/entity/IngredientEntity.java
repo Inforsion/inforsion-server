@@ -1,7 +1,6 @@
 package com.inforsion.inforsionserver.domain.ingredient.entity;
 
-import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
-import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
+import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,12 +9,17 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 재료 마스터 엔티티
+ * 재료의 종류를 정의 (예: 우유, 원두, 시럽)
+ */
 @Entity
 @Table(name = "ingredients",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"product_id", "inventory_id"})
+        @UniqueConstraint(columnNames = {"store_id", "name"})
     })
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -23,20 +27,36 @@ public class IngredientEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ingredient_id")
     private Integer id;
 
-    @Column(name = "amount_per_product", precision = 10, scale = 2)
-    private BigDecimal amountPerProduct;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name; // 재료명 (예: "우유", "원두")
 
-    @Column(length = 20)
-    private String unit;
+    @Column(name = "unit", nullable = false, length = 20)
+    private String unit; // 단위 (g, ml, 개 등)
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "stock_price", precision = 12, scale = 2)
+    private BigDecimal stockPrice; // 재고 가격
 
-    @Column(name = "is_active")
+    @Column(name = "unit_capacity", precision = 10, scale = 2)
+    private BigDecimal unitCapacity; // 1개당 재고 용량
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity; // 재고 수
+
+    @Column(name = "default_expiry_days")
+    private Integer defaultExpiryDays; // 기본 유통기한 (일)
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description; // 재료 설명
+
+    @Column(name = "image_url")
+    private String imageUrl; // 이미지 URL
+
     @Builder.Default
-    private Boolean isActive = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true; // 활성 상태
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -47,20 +67,20 @@ public class IngredientEntity {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private ProductEntity product;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventory_id")
-    private InventoryEntity inventory;
-
+    @JoinColumn(name = "store_id", nullable = false)
+    private StoreEntity store; // 매장
 
     /**
      * 재료 정보 업데이트
      */
-    public void update(BigDecimal amountPerProduct, String unit, String description) {
-        if (amountPerProduct != null) this.amountPerProduct = amountPerProduct;
+    public void update(String name, String unit, BigDecimal stockPrice, BigDecimal unitCapacity,
+                      Integer stockQuantity, Integer defaultExpiryDays, String description) {
+        if (name != null) this.name = name;
         if (unit != null) this.unit = unit;
+        if (stockPrice != null) this.stockPrice = stockPrice;
+        if (unitCapacity != null) this.unitCapacity = unitCapacity;
+        if (stockQuantity != null) this.stockQuantity = stockQuantity;
+        if (defaultExpiryDays != null) this.defaultExpiryDays = defaultExpiryDays;
         if (description != null) this.description = description;
     }
 
@@ -73,21 +93,10 @@ public class IngredientEntity {
         }
     }
 
-    public void assignProduct(ProductEntity product, BigDecimal amountPerProduct, String unit, String description) {
-        this.product = product;
-        if (amountPerProduct != null) {
-            this.amountPerProduct = amountPerProduct;
-        }
-        if (unit != null) {
-            this.unit = unit;
-        }
-        if (description != null) {
-            this.description = description;
-        }
+    /**
+     * 이미지 URL 업데이트
+     */
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
-
-    public void updateInventory(InventoryEntity inventory) {
-        this.inventory = inventory;
-    }
-
 }

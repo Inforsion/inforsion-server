@@ -16,8 +16,8 @@ public class RecipesResponseDto {
     private final String storeName;
     private final Integer menuId;
     private final String menuName;
-    private final Integer inventoryId;
-    private final String inventoryName;
+    private final Integer ingredientId;
+    private final String ingredientName;
     private final String name;
     private final BigDecimal amountPerMenu;
     private final String unit;
@@ -32,8 +32,8 @@ public class RecipesResponseDto {
                 .storeName(entity.getStore() != null ? entity.getStore().getName() : null)
                 .menuId(entity.getMenu() != null ? entity.getMenu().getId() : null)
                 .menuName(entity.getMenu() != null ? entity.getMenu().getName() : null)
-                .inventoryId(entity.getInventory() != null ? entity.getInventory().getId() : null)
-                .inventoryName(entity.getInventory() != null ? entity.getInventory().getName() : null)
+                .ingredientId(entity.getIngredient() != null ? entity.getIngredient().getId() : null)
+                .ingredientName(entity.getIngredient() != null ? entity.getIngredient().getName() : null)
                 .name(entity.getName())
                 .amountPerMenu(entity.getAmountPerMenu())
                 .unit(entity.getUnit())

@@ -54,7 +54,6 @@ public class InventoryDto {
                 entity.getLastRestockedDate(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-
                 entity.getStore() != null ? entity.getStore().getId() : null
         );
     }

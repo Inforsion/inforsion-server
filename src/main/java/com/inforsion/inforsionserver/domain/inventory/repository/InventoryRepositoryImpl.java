@@ -56,7 +56,7 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                     Order direction = order.isAscending() ? Order.ASC:Order.DESC;
                     switch (order.getProperty()){
                         case "name":
-                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.name);
+                            return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.ingredient.name);
                         case "currentStock":
                             return (OrderSpecifier<?>) new OrderSpecifier<>(direction, inventory.currentStock);
                         case "expiryDate":
@@ -75,9 +75,7 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
     public Long updateInventory(Integer inventoryId, InventoryDto inventoryDto){
         return queryFactory
                 .update(t)
-                .set(t.name, inventoryDto.getName())
                 .set(t.currentStock, inventoryDto.getCurrentStock())
-                .set(t.unit, inventoryDto.getUnit())
                 .set(t.unitCost, inventoryDto.getUnitCost())
                 .set(t.expiryDate, inventoryDto.getExpiryDate())
                 .set(t.lastRestockedDate, inventoryDto.getLastRestockedDate())
@@ -103,10 +101,11 @@ public class InventoryRepositoryImpl implements InventoryRepositoryCustom {
                 .select(Projections.constructor(
                         ExpiringInventoryDto.class,
                         t.id,
-                        t.name,
+                        t.ingredient.name,
                         t.expiryDate
                 ))
                 .from(t)
+                .leftJoin(t.ingredient).fetchJoin()
                 .where(t.expiryDate.loe(targetDate))
                 .fetch();
     }

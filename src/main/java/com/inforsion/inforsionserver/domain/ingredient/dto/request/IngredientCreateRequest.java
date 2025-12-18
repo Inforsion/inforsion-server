@@ -1,43 +1,43 @@
 package com.inforsion.inforsionserver.domain.ingredient.dto.request;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Schema(description = "재료 생성 요청 DTO")
+@Schema(description = "재료 생성 요청")
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class IngredientCreateRequest {
 
-    @Schema(description = "기존 재고 ID (없으면 newInventory로 신규 생성)", example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @Positive(message = "재고 ID는 양수여야 합니다")
-    private Integer inventoryId;
+    @Schema(description = "매장 ID", example = "1")
+    @NotNull(message = "매장 ID는 필수입니다.")
+    private Integer storeId;
 
-    @Schema(description = "새로운 재고 생성 정보 (inventoryId가 없을 때 사용)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @Valid
-    private IngredientInventoryCreateRequest newInventory;
+    @Schema(description = "재료명", example = "우유")
+    @NotBlank(message = "재료명은 필수입니다.")
+    private String name;
 
-    @Schema(description = "상품 1개당 필요한 재료량 (상품과 바로 연결 시 필수)", example = "15.5", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @DecimalMin(value = "0.0", inclusive = false, message = "재료량은 0보다 커야 합니다")
-    @Digits(integer = 10, fraction = 2, message = "재료량은 소수점 2자리까지 입력 가능합니다")
-    private BigDecimal amountPerProduct;
-
-    @Schema(description = "단위 (상품과 바로 연결 시 필수)", example = "g", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @Size(max = 20, message = "단위는 20자 이하여야 합니다")
+    @Schema(description = "단위", example = "ml")
+    @NotBlank(message = "단위는 필수입니다.")
     private String unit;
 
-    @Schema(description = "재료 설명", example = "고급 아라비카 원두")
-    @Size(max = 500, message = "설명은 500자 이하여야 합니다")
-    private String description;
+    @Schema(description = "재고 가격", example = "3000.00")
+    @NotNull(message = "재고 가격은 필수입니다.")
+    private BigDecimal stockPrice;
 
-    @Schema(description = "상품 ID (나중에 연결 가능)", example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @Positive(message = "상품 ID는 양수여야 합니다")
-    private Integer productId;
+    @Schema(description = "1개당 재고 용량", example = "1000.00")
+    @NotNull(message = "1개당 재고 용량은 필수입니다.")
+    private BigDecimal unitCapacity;
+
+    @Schema(description = "재고 수", example = "10")
+    @NotNull(message = "재고 수는 필수입니다.")
+    private Integer stockQuantity;
 }

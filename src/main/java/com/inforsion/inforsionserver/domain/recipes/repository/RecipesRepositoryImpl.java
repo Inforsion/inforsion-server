@@ -1,5 +1,6 @@
 package com.inforsion.inforsionserver.domain.recipes.repository;
 
+import com.inforsion.inforsionserver.domain.inventory.entity.QInventoryEntity;
 import com.inforsion.inforsionserver.domain.recipes.entity.QRecipesEntity;
 import com.inforsion.inforsionserver.domain.recipes.entity.RecipesEntity;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -62,7 +63,7 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom {
     public List<RecipesEntity> findRecipesByMenuIdWithIngredientDetails(Integer menuId) {
         return queryFactory
                 .selectFrom(qRecipes)
-                .leftJoin(qRecipes.inventory).fetchJoin()
+                .leftJoin(qRecipes.ingredient).fetchJoin()
                 .where(qRecipes.menu.id.eq(menuId)
                         .and(qRecipes.isActive.eq(true)))
                 .fetch();
@@ -70,11 +71,18 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom {
 
     @Override
     public List<RecipesEntity> findRecipesUsingInventoryId(Integer inventoryId) {
+        // inventoryId로 ingredient를 찾아서 해당 ingredient를 사용하는 레시피 조회
         return queryFactory
                 .selectFrom(qRecipes)
                 .leftJoin(qRecipes.menu).fetchJoin()
-                .where(qRecipes.inventory.id.eq(inventoryId)
-                        .and(qRecipes.isActive.eq(true)))
+                .leftJoin(qRecipes.ingredient).fetchJoin()
+                .where(qRecipes.ingredient.id.in(
+                    queryFactory
+                        .select(QInventoryEntity.inventoryEntity.ingredient.id)
+                        .from(QInventoryEntity.inventoryEntity)
+                        .where(QInventoryEntity.inventoryEntity.id.eq(inventoryId))
+                )
+                .and(qRecipes.isActive.eq(true)))
                 .fetch();
     }
 
@@ -82,10 +90,10 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom {
     public List<RecipesEntity> findRecipesByStoreAndIngredientName(Integer storeId, String ingredientName) {
         return queryFactory
                 .selectFrom(qRecipes)
-                .leftJoin(qRecipes.inventory).fetchJoin()
+                .leftJoin(qRecipes.ingredient).fetchJoin()
                 .leftJoin(qRecipes.menu).fetchJoin()
                 .where(qRecipes.store.id.eq(storeId)
-                        .and(qRecipes.inventory.name.containsIgnoreCase(ingredientName))
+                        .and(qRecipes.ingredient.name.containsIgnoreCase(ingredientName))
                         .and(qRecipes.isActive.eq(true)))
                 .fetch();
     }
@@ -101,10 +109,16 @@ public class RecipesRepositoryImpl implements RecipesRepositoryCustom {
 
     @Override
     public void deactivateRecipesByInventoryId(Integer inventoryId) {
+        // inventoryId로 ingredient를 찾아서 해당 ingredient를 사용하는 레시피 비활성화
         queryFactory
                 .update(qRecipes)
                 .set(qRecipes.isActive, false)
-                .where(qRecipes.inventory.id.eq(inventoryId))
+                .where(qRecipes.ingredient.id.in(
+                    queryFactory
+                        .select(QInventoryEntity.inventoryEntity.ingredient.id)
+                        .from(QInventoryEntity.inventoryEntity)
+                        .where(QInventoryEntity.inventoryEntity.id.eq(inventoryId))
+                ))
                 .execute();
     }
 }

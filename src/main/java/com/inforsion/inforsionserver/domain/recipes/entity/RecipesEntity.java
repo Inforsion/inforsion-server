@@ -1,6 +1,6 @@
 package com.inforsion.inforsionserver.domain.recipes.entity;
 
-import com.inforsion.inforsionserver.domain.inventory.entity.InventoryEntity;
+import com.inforsion.inforsionserver.domain.ingredient.entity.IngredientEntity;
 import com.inforsion.inforsionserver.domain.product.entity.ProductEntity;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
 import jakarta.persistence.*;
@@ -30,8 +30,8 @@ public class RecipesEntity {
     private ProductEntity menu;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventory_id", nullable = false)
-    private InventoryEntity inventory;
+    @JoinColumn(name = "ingredient_id", nullable = false)
+    private IngredientEntity ingredient; // Inventory가 아닌 Ingredient 참조!
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
@@ -57,15 +57,6 @@ public class RecipesEntity {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @Column(name = "create_at")
-    private LocalDateTime legacyCreatedAt;
-
-    @Column(name = "update_at")
-    private LocalDateTime legacyUpdatedAt;
-
-    @Column(name = "views")
-    private String views;
 
     public void deactivate() {
         this.isActive = false;
