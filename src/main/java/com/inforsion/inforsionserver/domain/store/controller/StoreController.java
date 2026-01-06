@@ -2,6 +2,11 @@ package com.inforsion.inforsionserver.domain.store.controller;
 
 import com.inforsion.inforsionserver.domain.store.dto.external.StoreAddressSearchDto;
 import com.inforsion.inforsionserver.domain.store.dto.request.StoreCreateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordCreateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordUpdateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordVerifyRequest;
+import com.inforsion.inforsionserver.domain.store.dto.response.StorePasswordResponse;
+import com.inforsion.inforsionserver.domain.store.dto.response.StorePasswordVerifyResponse;
 import com.inforsion.inforsionserver.domain.store.dto.response.StoreResponse;
 import com.inforsion.inforsionserver.domain.store.dto.request.StoreUpdateRequest;
 import com.inforsion.inforsionserver.domain.store.service.StoreService;
@@ -175,5 +180,98 @@ public class StoreController {
         Integer userId = authenticatedUserProvider.getCurrentUserId();
         storeService.deleteStoreThumbnail(storeId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "매장 비밀번호 생성",
+            description = "매장에 새로운 비밀번호를 설정합니다. 이미 비밀번호가 있는 경우 에러를 반환합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "비밀번호 생성 성공",
+                    content = @Content(schema = @Schema(implementation = StorePasswordResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 비밀번호가 설정되어 있음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "매장을 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @PostMapping("/{storeId}/password")
+    public ResponseEntity<StorePasswordResponse> createStorePassword(
+            @Parameter(description = "매장 ID", required = true, example = "1")
+            @PathVariable Integer storeId,
+            @Valid @RequestBody StorePasswordCreateRequest request) {
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
+        StorePasswordResponse response = storeService.createStorePassword(storeId, userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+            summary = "매장 비밀번호 검증",
+            description = "입력한 비밀번호가 매장 비밀번호와 일치하는지 확인합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "검증 완료",
+                    content = @Content(schema = @Schema(implementation = StorePasswordVerifyResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "비밀번호가 설정되어 있지 않음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "매장을 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @PostMapping("/{storeId}/password/verify")
+    public ResponseEntity<StorePasswordVerifyResponse> verifyStorePassword(
+            @Parameter(description = "매장 ID", required = true, example = "1")
+            @PathVariable Integer storeId,
+            @Valid @RequestBody StorePasswordVerifyRequest request) {
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
+        StorePasswordVerifyResponse response = storeService.verifyStorePassword(storeId, userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "매장 비밀번호 변경",
+            description = "매장 비밀번호를 변경합니다. 현재 비밀번호 확인이 필요합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "비밀번호 변경 성공",
+                    content = @Content(schema = @Schema(implementation = StorePasswordResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "현재 비밀번호가 일치하지 않거나 비밀번호가 설정되어 있지 않음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "매장을 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @PutMapping("/{storeId}/password")
+    public ResponseEntity<StorePasswordResponse> updateStorePassword(
+            @Parameter(description = "매장 ID", required = true, example = "1")
+            @PathVariable Integer storeId,
+            @Valid @RequestBody StorePasswordUpdateRequest request) {
+        Integer userId = authenticatedUserProvider.getCurrentUserId();
+        StorePasswordResponse response = storeService.updateStorePassword(storeId, userId, request);
+        return ResponseEntity.ok(response);
     }
 }

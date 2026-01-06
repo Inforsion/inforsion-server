@@ -11,8 +11,12 @@ import com.inforsion.inforsionserver.global.error.code.ErrorCode;
 import com.inforsion.inforsionserver.global.error.exception.BusinessException;
 import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
+import java.util.stream.Collectors;
+
+// TODO: 페이징 처리가 필요한 경우 주석 해제
+// import org.springframework.data.domain.Page;
+// import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,19 +68,23 @@ public class IngredientService {
     }
 
     /**
-     * 매장별 재료 목록 조회 (페이징)
+     * 매장별 재료 목록 조회
      */
-    public Page<IngredientResponse> getIngredientsByStore(Integer storeId, Pageable pageable) {
-        Page<IngredientEntity> ingredients = ingredientRepository.findByStoreIdAndIsActive(storeId, true)
-                .stream()
-                .skip(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .collect(java.util.stream.Collectors.collectingAndThen(
-                        java.util.stream.Collectors.toList(),
-                        list -> new org.springframework.data.domain.PageImpl<>(list, pageable, list.size())
-                ));
-        return ingredients.map(IngredientResponse::from);
+    public List<IngredientResponse> getIngredientsByStore(Integer storeId) {
+        List<IngredientEntity> ingredients = ingredientRepository.findByStoreIdAndIsActive(storeId, true);
+        return ingredients.stream()
+                .map(IngredientResponse::from)
+                .collect(Collectors.toList());
     }
+
+    // TODO: 페이징 처리가 필요한 경우 아래 메서드 사용
+    // /**
+    //  * 매장별 재료 목록 조회 (페이징)
+    //  */
+    // public Page<IngredientResponse> getIngredientsByStoreWithPaging(Integer storeId, Pageable pageable) {
+    //     Page<IngredientEntity> ingredients = ingredientRepository.findByStoreIdAndIsActive(storeId, true, pageable);
+    //     return ingredients.map(IngredientResponse::from);
+    // }
 
     /**
      * 재료 수정
