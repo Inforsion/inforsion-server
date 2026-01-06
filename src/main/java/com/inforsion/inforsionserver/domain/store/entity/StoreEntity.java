@@ -54,6 +54,9 @@ public class StoreEntity {
     @Column(name = "s3_key")
     private String s3Key;
 
+    @Column(name = "password", length = 255)
+    private String password; // 매장 비밀번호 (BCrypt 암호화)
+
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -102,5 +105,19 @@ public class StoreEntity {
      */
     public boolean hasThumbnail() {
         return thumbnailUrl != null && !thumbnailUrl.isBlank();
+    }
+
+    /**
+     * 비밀번호 업데이트
+     */
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    /**
+     * 비밀번호 설정 여부 확인
+     */
+    public boolean hasPassword() {
+        return password != null && !password.isBlank();
     }
 }

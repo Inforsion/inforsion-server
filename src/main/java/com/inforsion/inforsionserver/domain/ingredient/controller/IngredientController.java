@@ -13,10 +13,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
+import java.util.List;
+
+// TODO: 페이징 처리가 필요한 경우 주석 해제
+// import org.springframework.data.domain.Page;
+// import org.springframework.data.domain.Pageable;
+// import org.springframework.data.domain.Sort;
+// import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -69,14 +72,23 @@ public class IngredientController {
         return ResponseEntity.ok(ingredientService.getIngredient(ingredientId));
     }
 
-    @Operation(summary = "매장별 재료 목록 조회", description = "특정 매장의 활성화된 재료 목록을 페이징 처리하여 조회합니다.")
+    @Operation(summary = "매장별 재료 목록 조회", description = "특정 매장의 활성화된 재료 목록을 조회합니다.")
     @GetMapping("/store/{storeId}")
-    public ResponseEntity<Page<IngredientResponse>> getIngredientsByStore(
-            @Parameter(description = "매장 ID", required = true) @PathVariable Integer storeId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    public ResponseEntity<List<IngredientResponse>> getIngredientsByStore(
+            @Parameter(description = "매장 ID", required = true) @PathVariable Integer storeId
     ) {
-        return ResponseEntity.ok(ingredientService.getIngredientsByStore(storeId, pageable));
+        return ResponseEntity.ok(ingredientService.getIngredientsByStore(storeId));
     }
+
+    // TODO: 페이징 처리가 필요한 경우 아래 메서드 사용
+    // @Operation(summary = "매장별 재료 목록 조회 (페이징)", description = "특정 매장의 활성화된 재료 목록을 페이징 처리하여 조회합니다.")
+    // @GetMapping("/store/{storeId}/paged")
+    // public ResponseEntity<Page<IngredientResponse>> getIngredientsByStoreWithPaging(
+    //         @Parameter(description = "매장 ID", required = true) @PathVariable Integer storeId,
+    //         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    // ) {
+    //     return ResponseEntity.ok(ingredientService.getIngredientsByStoreWithPaging(storeId, pageable));
+    // }
 
     @Operation(summary = "재료 수정", description = "재료 정보를 부분 수정합니다. 필요한 필드만 전달하면 됩니다.")
     @PutMapping("/{ingredientId}")

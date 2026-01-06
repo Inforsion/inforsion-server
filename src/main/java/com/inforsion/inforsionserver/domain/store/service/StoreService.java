@@ -2,6 +2,11 @@ package com.inforsion.inforsionserver.domain.store.service;
 
 import com.inforsion.inforsionserver.domain.store.dto.external.StoreAddressSearchDto;
 import com.inforsion.inforsionserver.domain.store.dto.request.StoreCreateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordCreateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordUpdateRequest;
+import com.inforsion.inforsionserver.domain.store.dto.request.StorePasswordVerifyRequest;
+import com.inforsion.inforsionserver.domain.store.dto.response.StorePasswordResponse;
+import com.inforsion.inforsionserver.domain.store.dto.response.StorePasswordVerifyResponse;
 import com.inforsion.inforsionserver.domain.store.dto.response.StoreResponse;
 import com.inforsion.inforsionserver.domain.store.dto.request.StoreUpdateRequest;
 import com.inforsion.inforsionserver.domain.store.entity.StoreEntity;
@@ -16,6 +21,7 @@ import com.inforsion.inforsionserver.global.infra.kakao.KakaoMapClient;
 import com.inforsion.inforsionserver.global.infra.kakao.dto.KakaoAddressSearchResponse;
 import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,6 +39,7 @@ public class StoreService {
     private final UserRepository userRepository;
     private final S3FileUploadService s3FileUploadService;
     private final KakaoMapClient kakaoMapClient;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String S3_DIRECTORY = "stores";
 
@@ -273,5 +280,76 @@ public class StoreService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    /**
+     * 매장 비밀번호 생성
+     *
+     * @param storeId 매장 ID
+     * @param userId 사용자 ID
+     * @param request 비밀번호 생성 요청
+     * @return 비밀번호 응답
+     */
+    @Transactional
+    public StorePasswordResponse createStorePassword(Integer storeId, Integer userId, StorePasswordCreateRequest request) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
+
+        if (store.hasPassword()) {
+            throw new IllegalStateException("이미 비밀번호가 설정되어 있습니다. 비밀번호 변경 API를 사용하세요.");
+        }
+
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        store.updatePassword(encodedPassword);
+
+        return StorePasswordResponse.of(storeId, true, "비밀번호가 생성되었습니다.");
+    }
+
+    /**
+     * 매장 비밀번호 검증
+     *
+     * @param storeId 매장 ID
+     * @param userId 사용자 ID
+     * @param request 비밀번호 검증 요청
+     * @return 비밀번호 검증 응답
+     */
+    public StorePasswordVerifyResponse verifyStorePassword(Integer storeId, Integer userId, StorePasswordVerifyRequest request) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
+
+        if (!store.hasPassword()) {
+            throw new IllegalStateException("비밀번호가 설정되어 있지 않습니다.");
+        }
+
+        boolean isValid = passwordEncoder.matches(request.getPassword(), store.getPassword());
+        String message = isValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다.";
+
+        return StorePasswordVerifyResponse.of(storeId, isValid, message);
+    }
+
+    /**
+     * 매장 비밀번호 변경
+     *
+     * @param storeId 매장 ID
+     * @param userId 사용자 ID
+     * @param request 비밀번호 변경 요청
+     * @return 비밀번호 응답
+     */
+    @Transactional
+    public StorePasswordResponse updateStorePassword(Integer storeId, Integer userId, StorePasswordUpdateRequest request) {
+        StoreEntity store = getStoreOwnedBy(storeId, userId);
+
+        if (!store.hasPassword()) {
+            throw new IllegalStateException("비밀번호가 설정되어 있지 않습니다. 비밀번호 생성 API를 먼저 사용하세요.");
+        }
+
+        // 현재 비밀번호 확인
+        if (!passwordEncoder.matches(request.getCurrentPassword(), store.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호 암호화 및 저장
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        store.updatePassword(encodedPassword);
+
+        return StorePasswordResponse.of(storeId, true, "비밀번호가 변경되었습니다.");
     }
 }
