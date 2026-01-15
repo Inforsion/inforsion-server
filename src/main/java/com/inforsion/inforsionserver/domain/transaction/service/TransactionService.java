@@ -75,9 +75,7 @@ public class TransactionService {
         entity.setPaymentMethod(requestDto.getPaymentMethod());
         entity.setCostCategory(requestDto.getCostCategory());
 
-        TransactionEntity updated = transactionRepository.save(entity);
-        return toResponseDto(updated);
-
+        return toResponseDto(entity); // dirtychecking 문제때문에 save 를 삭제하였습니다.
     }
 
     /**
