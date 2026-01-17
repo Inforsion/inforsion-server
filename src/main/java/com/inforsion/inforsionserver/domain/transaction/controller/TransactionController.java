@@ -16,6 +16,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -40,6 +42,7 @@ public class TransactionController {
     })
     @GetMapping("/{storeId}")
     public ResponseEntity<List<TransactionResponseDto>> getTransactions(
+            @AuthenticationPrincipal Authentication authentication,
             @Parameter(description = "매장 ID", required = true, example = "1")
             @PathVariable Integer storeId,
             @Parameter(description = "거래 유형 (INCOME: 수입, EXPENSE: 지출)", required = true, example = "INCOME")
@@ -49,6 +52,7 @@ public class TransactionController {
             @Parameter(description = "조회 종료 날짜", required = true, example = "2025-08-31T23:59:59")
             @RequestParam LocalDateTime endDate
     ) {
+
         List<TransactionResponseDto> transactions = transactionService.getTransaction(
                 storeId, transactionType, startDate, endDate
         );
@@ -87,8 +91,7 @@ public class TransactionController {
     })
     @DeleteMapping("/{transId}")
     public ResponseEntity<Void> deleteTransaction(
-            @Parameter(description = "삭제할 거래 ID", required = true, example = "1")
-            @PathVariable("transId") Integer transId
+            @PathVariable @Parameter(description = "삭제할 거래 ID", required = true, example = "1") Integer transId
     ) {
         transactionService.deleteTransaction(transId);
         return ResponseEntity.noContent().build();

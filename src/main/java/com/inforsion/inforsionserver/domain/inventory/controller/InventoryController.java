@@ -85,7 +85,7 @@ public class InventoryController {
     @DeleteMapping("/{inventoryId}")
     public ResponseEntity<Void> deleteInventory(
             @Parameter(description = "삭제할 재고 ID", required = true, example = "1")
-            @PathVariable("inventoryId") Integer inventoryId
+            @PathVariable Integer inventoryId
     ) {
         inventoryService.deleteInventory(inventoryId);
         return ResponseEntity.noContent().build();
