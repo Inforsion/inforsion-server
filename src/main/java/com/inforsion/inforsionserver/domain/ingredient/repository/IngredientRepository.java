@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface IngredientRepository extends JpaRepository<IngredientEntity, Integer> {
+public interface IngredientRepository extends JpaRepository<IngredientEntity, Integer>, IngredientRepositoryCustom {
 
     List<IngredientEntity> findByStoreIdAndIsActive(Integer storeId, Boolean isActive);
 

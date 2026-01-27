@@ -12,6 +12,7 @@ import com.inforsion.inforsionserver.global.error.exception.BusinessException;
 import com.inforsion.inforsionserver.global.service.S3FileUploadService;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 // TODO: 페이징 처리가 필요한 경우 주석 해제
@@ -32,6 +33,8 @@ public class IngredientService {
 
     /**
      * 재료 생성
+     * - 같은 이름의 활성화된 재료가 있으면 중복 에러
+     * - 같은 이름의 비활성화된 재료가 있으면 재활성화 후 정보 업데이트
      */
     @Transactional
     public IngredientResponse createIngredient(IngredientCreateRequest request) {
@@ -39,10 +42,29 @@ public class IngredientService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.STORE_NOT_FOUND,
                         "매장을 찾을 수 없습니다. ID: " + request.getStoreId()));
 
-        // 같은 매장에 같은 이름의 재료가 이미 존재하는지 확인
-        if (ingredientRepository.findByStoreIdAndName(request.getStoreId(), request.getName()).isPresent()) {
+        // 같은 매장에 같은 이름의 활성화된 재료가 있는지 확인
+        if (ingredientRepository.findByStoreIdAndNameAndIsActive(request.getStoreId(), request.getName(), true).isPresent()) {
             throw new BusinessException(ErrorCode.INGREDIENT_ALREADY_EXISTS,
                     "이미 존재하는 재료명입니다: " + request.getName());
+        }
+
+        // 비활성화된 같은 이름의 재료가 있으면 재활성화
+        Optional<IngredientEntity> inactiveIngredient = ingredientRepository
+                .findByStoreIdAndNameAndIsActive(request.getStoreId(), request.getName(), false);
+
+        if (inactiveIngredient.isPresent()) {
+            IngredientEntity ingredient = inactiveIngredient.get();
+            ingredient.updateActiveStatus(true);
+            ingredient.update(
+                    request.getName(),
+                    request.getUnit(),
+                    request.getStockPrice(),
+                    request.getUnitCapacity(),
+                    request.getStockQuantity(),
+                    null,
+                    null
+            );
+            return IngredientResponse.from(ingredient);
         }
 
         IngredientEntity ingredient = IngredientEntity.builder()
@@ -93,9 +115,9 @@ public class IngredientService {
     public IngredientResponse updateIngredient(Integer ingredientId, IngredientUpdateRequest request) {
         IngredientEntity ingredient = getIngredientOrThrow(ingredientId);
 
-        // 재료명이 변경되는 경우 중복 체크
+        // 재료명이 변경되는 경우 활성화된 재료 중 중복 체크
         if (request.getName() != null && !request.getName().equals(ingredient.getName())) {
-            if (ingredientRepository.findByStoreIdAndName(ingredient.getStore().getId(), request.getName()).isPresent()) {
+            if (ingredientRepository.findByStoreIdAndNameAndIsActive(ingredient.getStore().getId(), request.getName(), true).isPresent()) {
                 throw new BusinessException(ErrorCode.INGREDIENT_ALREADY_EXISTS,
                         "이미 존재하는 재료명입니다: " + request.getName());
             }
