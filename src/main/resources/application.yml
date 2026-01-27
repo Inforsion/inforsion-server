@@ -26,7 +26,7 @@ spring:
     job:
       enabled: false
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
  
   # 데이터베이스 초기화 설정 (data.sql 비활성화)
   sql:
@@ -204,7 +204,7 @@ spring:
       mode: never                       # SQL 스크립트 실행하지 않음
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
     job:
       enabled: false
 
